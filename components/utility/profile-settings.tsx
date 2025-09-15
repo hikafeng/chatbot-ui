@@ -332,7 +332,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({ }) => {
           if (provider === "openrouter") {
             if (hasApiKey && availableOpenRouterModels.length === 0) {
               const openrouterModels: OpenRouterLLM[] =
-                await fetchOpenRouterModels()
+                await fetchOpenRouterModels(profile["openrouter_api_key"])
               setAvailableOpenRouterModels(prev => {
                 const newModels = openrouterModels.filter(
                   model =>

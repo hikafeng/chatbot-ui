@@ -90,9 +90,11 @@ export const fetchOllamaModels = async () => {
     console.warn("Error fetching Ollama models: " + error)
   }
 }
-export const fetchOpenRouterModels = async () => {
+export const fetchOpenRouterModels = async (openrouter_api_key: any) => {
   let data = []
-
+  if (!openrouter_api_key || openrouter_api_key.length !== 73) {
+    return []
+  } 
   try {
     const response = await fetch("https://openrouter.ai/api/v1/models")
 
@@ -140,6 +142,9 @@ export const fetchOpenRouterModels = async () => {
 }
 
 export const fetchDeepSeekModels = async (deepseek_api_key: any) => {
+  if (!deepseek_api_key || deepseek_api_key.length !== 35) {
+    return []
+  }
   let myHeaders = new Headers()
   myHeaders.append("Authorization", `Bearer ${deepseek_api_key}`)
 
