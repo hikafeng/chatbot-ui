@@ -94,7 +94,7 @@ export const fetchOpenRouterModels = async (openrouter_api_key: any) => {
   let data = []
   if (!openrouter_api_key || openrouter_api_key.length !== 73) {
     return []
-  } 
+  }
   try {
     const response = await fetch("https://openrouter.ai/api/v1/models")
 

@@ -63,9 +63,9 @@ import { deleteAllChats } from "@/db/chats"
 import { useChatHandler } from "../chat/chat-hooks/use-chat-handler"
 import { DeleteAllChats } from "../sidebar/items/chat/delete-all-chats"
 
-interface ProfileSettingsProps { }
+interface ProfileSettingsProps {}
 
-export const ProfileSettings: FC<ProfileSettingsProps> = ({ }) => {
+export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
   const {
     profile,
     setProfile,

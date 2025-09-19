@@ -205,7 +205,9 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
           profile["openrouter_api_key"] ||
           hostedModelRes.envKeyMap["openrouter"]
         ) {
-          const openRouterModels = await fetchOpenRouterModels(profile["openrouter_api_key"])
+          const openRouterModels = await fetchOpenRouterModels(
+            profile["openrouter_api_key"]
+          )
           if (!openRouterModels) return
           setAvailableOpenRouterModels(openRouterModels)
         }
