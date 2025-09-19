@@ -112,16 +112,18 @@ export const CreateModel: FC<CreateModelProps> = ({ isOpen, onOpenChange }) => {
               onChange={e => setApiKey(e.target.value)}
             />
           </div>
-          <Label>Vision Support</Label>
-          <Select onValueChange={value => setImageInput(value === "true")}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select vision support" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="true">True</SelectItem>
-              <SelectItem value="false">False</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="space-y-1">
+            <Label>Vision Support</Label>
+            <Select onValueChange={value => setImageInput(value === "true")}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select vision support" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">True</SelectItem>
+                <SelectItem value="false">False</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1">
             <Label>Max Context Length</Label>
 
