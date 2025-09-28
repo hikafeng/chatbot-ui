@@ -10,21 +10,19 @@ export const runtime: ServerRuntime = "edge"
 
 export async function POST(request: Request) {
   const json = await request.json()
-  // 解构时应用默认值
-  const { settings, messages } = json as {
-    settings: Settings
-    messages: any[]
-  }
-
-  // 应用默认设置
+  // 设置 temperature 和 max_tokens 的默认值
   const {
-    apikey,
     model,
-    prompt = "You are a friendly, helpful AI assistant.",
-    temperature = 0.5,
-    contextLength = 4096,
+    messages,
+    temperature = 0.7,
     max_tokens = 4096
-  } = settings
+  } = json as {
+    model: string
+    messages: any[]
+    temperature: number
+    max_tokens: number
+  }
+  const apiKey = request.headers.get("Authorization")?.replace("Bearer ", "")
 
   try {
     const NEXT_PUBLIC_SITE_URL_STR =
@@ -32,7 +30,7 @@ export async function POST(request: Request) {
       "https://chat.hikafeng.com"
 
     const openai = new OpenAI({
-      apiKey: apikey || "",
+      apiKey: apiKey || "",
       baseURL: "https://openrouter.ai/api/v1",
       defaultHeaders: {
         "HTTP-Referer": NEXT_PUBLIC_SITE_URL_STR, // Optional, for including your app on openrouter.ai rankings.
