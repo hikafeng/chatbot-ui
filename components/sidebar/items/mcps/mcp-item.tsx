@@ -105,13 +105,13 @@ export const McpItem: FC<McpItemProps> = ({ mcp }) => {
 
             <TextareaAutosize
               placeholder={`{
-              "mcpServers": {
-                "mcp-name": {
-                  "type": "sse",
-                  "url": "https://mcp.example.com/sse"
-                }
-              }
-            }`}
+  "mcpServers": {
+      "mcp-name": {
+        "type": "sse",
+        "url": "https://mcp.example.com/sse"
+      }
+    }
+}`}
               value={schema}
               onValueChange={value => {
                 setSchema(value)

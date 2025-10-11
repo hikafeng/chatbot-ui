@@ -56,7 +56,7 @@ export const ChatSettings: FC<ChatSettingsProps> = ({}) => {
       provider: "custom" as ModelProvider,
       hostedId: model.id,
       platformLink: "",
-      imageInput: false
+      imageInput: model.image_input
     })),
     ...availableHostedModels,
     ...availableLocalModels,

@@ -1,6 +1,13 @@
 import { SidebarCreateItem } from "@/components/sidebar/items/all/sidebar-create-item"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectValue,
+  SelectTrigger,
+  SelectItem
+} from "@/components/ui/select"
 import { ChatbotUIContext } from "@/context/context"
 import { MODEL_NAME_MAX } from "@/db/limits"
 import { TablesInsert } from "@/supabase/types"
@@ -22,6 +29,7 @@ export const CreateModel: FC<CreateModelProps> = ({ isOpen, onOpenChange }) => {
   const [modelId, setModelId] = useState("")
   const [name, setName] = useState("")
   const [contextLength, setContextLength] = useState(4096)
+  const [imageInput, setImageInput] = useState(false)
 
   if (!profile || !selectedWorkspace) return null
 
@@ -39,20 +47,26 @@ export const CreateModel: FC<CreateModelProps> = ({ isOpen, onOpenChange }) => {
           description,
           context_length: contextLength,
           model_id: modelId,
+          image_input: imageInput,
           name
         } as TablesInsert<"models">
       }
       renderInputs={() => (
         <>
           <div className="space-y-1.5 text-sm">
-            <div>Create a custom model.</div>
-
-            <div>
-              Your API <span className="font-bold">*must*</span> be compatible
+            <p>Create a custom model.</p>
+            <p>
+              Your API <span className="font-bold">must</span> be compatible
               with the OpenAI SDK.
-            </div>
+            </p>
+            <p>
+              Additionally, if the reasoning format is{" "}
+              <code className="font-mono text-gray-800">deepseek_r1</code>, the
+              model name <span className="font-bold">must</span> include the
+              term Deepseek (case-insensitive), such as{" "}
+              <span className="font-bold">Qwen3-32B-Deepseek</span>.
+            </p>
           </div>
-
           <div className="space-y-1">
             <Label>Name</Label>
 
@@ -98,7 +112,18 @@ export const CreateModel: FC<CreateModelProps> = ({ isOpen, onOpenChange }) => {
               onChange={e => setApiKey(e.target.value)}
             />
           </div>
-
+          <div className="space-y-1">
+            <Label>Vision Support</Label>
+            <Select onValueChange={value => setImageInput(value === "true")}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select vision support" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">True</SelectItem>
+                <SelectItem value="false">False</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1">
             <Label>Max Context Length</Label>
 

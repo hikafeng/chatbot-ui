@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS models (
     base_url TEXT NOT NULL CHECK (char_length(base_url) <= 1000),
     description TEXT NOT NULL CHECK (char_length(description) <= 500),
     model_id TEXT NOT NULL CHECK (char_length(model_id) <= 1000),
+    image_input BOOLEAN NOT NULL DEFAULT FALSE,
     name TEXT NOT NULL CHECK (char_length(name) <= 100)
 );
 

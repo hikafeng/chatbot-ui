@@ -982,6 +982,7 @@ export type Database = {
           folder_id: string | null
           id: string
           model_id: string
+          image_input:boolean
           name: string
           sharing: string
           updated_at: string | null
@@ -996,6 +997,7 @@ export type Database = {
           folder_id?: string | null
           id?: string
           model_id: string
+          image_input?:boolean
           name: string
           sharing?: string
           updated_at?: string | null
@@ -1010,6 +1012,7 @@ export type Database = {
           folder_id?: string | null
           id?: string
           model_id?: string
+          image_input?:boolean
           name?: string
           sharing?: string
           updated_at?: string | null

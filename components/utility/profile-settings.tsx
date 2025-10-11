@@ -165,7 +165,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
     const openrouterApiKeyToUse =
       openrouterAPIKey || profile?.openrouter_api_key
     const fetchOpenrouterKeyUsage = async () => {
-      if (!openrouterApiKeyToUse) return
+      if (!openrouterApiKeyToUse || openrouterApiKeyToUse.length !== 73) return
       try {
         const response = await fetch("https://openrouter.ai/api/v1/auth/key", {
           method: "GET",
@@ -200,8 +200,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
   useEffect(() => {
     const deepseekApiKeyToUse = deepseekAPIKey || profile?.deepseek_api_key
     const fetchDeepseekKeyUsage = async () => {
-      if (!deepseekApiKeyToUse) return
-
+      if (!deepseekApiKeyToUse || deepseekApiKeyToUse.length !== 35) return
       try {
         const response = await fetch("https://api.deepseek.com/user/balance", {
           method: "GET",
@@ -333,7 +332,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
           if (provider === "openrouter") {
             if (hasApiKey && availableOpenRouterModels.length === 0) {
               const openrouterModels: OpenRouterLLM[] =
-                await fetchOpenRouterModels()
+                await fetchOpenRouterModels(profile["openrouter_api_key"])
               setAvailableOpenRouterModels(prev => {
                 const newModels = openrouterModels.filter(
                   model =>

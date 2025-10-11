@@ -101,19 +101,27 @@ export async function POST(request: Request) {
 
                     if (json.choices && json.choices.length > 0) {
                       const delta = json.choices[0].delta
-                      let chunk = ""
+                      console.log("Delta received:", delta)
 
-                      if (delta.content === null) {
-                        chunk =
+                      let chunks = []
+
+                      if (delta.content !== undefined) {
+                        chunks.push(
+                          JSON.stringify({ content: delta.content }) + "\n"
+                        )
+                      }
+
+                      if (delta.reasoning_content !== undefined) {
+                        chunks.push(
                           JSON.stringify({
                             reasoning_content: delta.reasoning_content
                           }) + "\n"
-                      } else {
-                        chunk =
-                          JSON.stringify({ content: delta.content }) + "\n"
+                        )
                       }
 
-                      controller.enqueue(encoder.encode(chunk))
+                      for (const chunk of chunks) {
+                        controller.enqueue(encoder.encode(chunk))
+                      }
                     }
                   } catch (error) {
                     // **解析失败，说明 JSON 可能是被拆分的，存入 buffer**

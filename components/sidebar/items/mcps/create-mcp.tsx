@@ -110,16 +110,14 @@ export const CreateMcp: FC<CreateMcpProps> = ({ isOpen, onOpenChange }) => {
             <Label>Schema</Label>
 
             <TextareaAutosize
-              placeholder={`
-              {
-                "mcpServers": {
-                    "mcp-name": {
-                      "type": "sse",
-                      "url": "https://mcp.example.com/sse"
-                    }
-                  }
-              }
-              `}
+              placeholder={`{
+  "mcpServers": {
+      "mcp-name": {
+        "type": "sse",
+        "url": "https://mcp.example.com/sse"
+      }
+    }
+}`}
               value={schema}
               onValueChange={value => {
                 setSchema(value)

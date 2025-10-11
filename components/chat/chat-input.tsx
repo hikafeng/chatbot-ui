@@ -20,6 +20,7 @@ import { useChatHandler } from "./chat-hooks/use-chat-handler"
 import { useChatHistoryHandler } from "./chat-hooks/use-chat-history"
 import { usePromptAndCommand } from "./chat-hooks/use-prompt-and-command"
 import { useSelectFileHandler } from "./chat-hooks/use-select-file-handler"
+import { LLMID, ModelProvider } from "@/types"
 
 interface ChatInputProps {}
 
@@ -59,7 +60,12 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     setSelectedTools,
     selectedMcps,
     setSelectedMcps,
-    assistantImages
+    assistantImages,
+    models,
+    availableHostedModels,
+    availableLocalModels,
+    availableOpenRouterModels,
+    availableDeepSeekModels
   } = useContext(ChatbotUIContext)
 
   const {
@@ -152,11 +158,27 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     const imagesAllowed = LLM_LIST.find(
       llm => llm.modelId === chatSettings?.model
     )?.imageInput
-
+    const allModels = [
+      ...models.map(model => ({
+        modelId: model.model_id as LLMID,
+        modelName: model.name,
+        provider: "custom" as ModelProvider,
+        hostedId: model.id,
+        platformLink: "",
+        imageInput: model.image_input
+      })),
+      ...availableHostedModels,
+      ...availableLocalModels,
+      ...availableDeepSeekModels,
+      ...availableOpenRouterModels
+    ]
+    const imagesAllowedAllmodel = allModels.find(
+      llm => llm.modelId === chatSettings?.model
+    )?.imageInput
     const items = event.clipboardData.items
     for (const item of items) {
       if (item.type.indexOf("image") === 0) {
-        if (!imagesAllowed) {
+        if (!imagesAllowed && !imagesAllowedAllmodel) {
           toast.error(
             `Images are not supported for this model. Use models like GPT-4 Vision instead.`
           )

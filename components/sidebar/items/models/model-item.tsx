@@ -1,5 +1,12 @@
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import {
+  Select,
+  SelectContent,
+  SelectValue,
+  SelectTrigger,
+  SelectItem
+} from "@/components/ui/select"
 import { MODEL_NAME_MAX } from "@/db/limits"
 import { Tables, TablesUpdate } from "@/supabase/types"
 import { IconBoxModel } from "@tabler/icons-react"
@@ -19,6 +26,7 @@ export const ModelItem: FC<ModelItemProps> = ({ model }) => {
   const [modelId, setModelId] = useState(model.model_id)
   const [name, setName] = useState(model.name)
   const [contextLength, setContextLength] = useState(model.context_length)
+  const [imageInput, setImageInput] = useState(false)
 
   return (
     <SidebarItem
@@ -33,11 +41,25 @@ export const ModelItem: FC<ModelItemProps> = ({ model }) => {
           description,
           context_length: contextLength,
           model_id: modelId,
+          image_input: imageInput,
           name
         } as TablesUpdate<"models">
       }
       renderInputs={() => (
         <>
+          <div className="space-y-1.5 text-sm">
+            <p>
+              Your API <span className="font-bold">must</span> be compatible
+              with the OpenAI SDK.
+            </p>
+            <p>
+              Additionally, if the reasoning format is{" "}
+              <code className="font-mono text-gray-800">deepseek_r1</code>, the
+              model name <span className="font-bold">must</span> include the
+              term Deepseek (case-insensitive), such as{" "}
+              <span className="font-bold">Qwen3-32B-Deepseek</span>.
+            </p>
+          </div>
           <div className="space-y-1">
             <Label>Name</Label>
 
@@ -82,6 +104,19 @@ export const ModelItem: FC<ModelItemProps> = ({ model }) => {
               value={apiKey}
               onChange={e => setApiKey(e.target.value)}
             />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Vision Support</Label>
+            <Select onValueChange={value => setImageInput(value === "true")}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select vision support" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">True</SelectItem>
+                <SelectItem value="false">False</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1">
