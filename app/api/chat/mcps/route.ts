@@ -1,426 +1,428 @@
-// import { openapiToFunctions } from "@/lib/openapi-conversion"
-// import { mcpserverToMCP } from "@/lib/mcpserver-conversion"
+import { mcpserverToMCP } from "@/lib/mcpserver-conversion"
+import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
+import { Tables } from "@/supabase/types"
+import { ChatSettings } from "@/types"
+import { OpenAIStream, StreamingTextResponse } from "ai"
+import OpenAI from "openai"
+import { ChatCompletionCreateParamsBase } from "openai/resources/chat/completions.mjs"
+import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js"
+import { Client } from "@modelcontextprotocol/sdk/client/index.js"
+import packageJson from "@/package.json"
+import { LLM } from "@/types"
+import { createClient } from "@/lib/supabase/server"
+import { cookies } from "next/headers"
+import {
+  StreamableHTTPClientTransport,
+  StreamableHTTPClientTransportOptions
+} from "@modelcontextprotocol/sdk/client/streamableHttp.js"
+import {
+  SSEClientTransport,
+  SSEClientTransportOptions
+} from "@modelcontextprotocol/sdk/client/sse.js"
 
-// import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
-// import { Tables } from "@/supabase/types"
-// import { ChatSettings } from "@/types"
-// import { OpenAIStream, StreamingTextResponse } from "ai"
-// import OpenAI from "openai"
-// import { ChatCompletionCreateParamsBase } from "openai/resources/chat/completions.mjs"
-// import cors from "cors";
-// import { Transport } from "@modelcontextprotocol/sdk/shared/transport.js";
-// import express from "express";
-// import { Client } from "@modelcontextprotocol/sdk/client/index.js";
-// import { useState } from "react";
-// import { Result } from "@modelcontextprotocol/sdk/types.js";
-// import packageJson from "@/package.json";
-// import { LLM } from "@/types"
-// import { Notification, StdErrNotificationSchema } from "@/components/mcp/lib/notificationTypes"
-// import {
-//   SSEClientTransport,
-//   SseError,
-//   SSEClientTransportOptions,
-// } from "@modelcontextprotocol/sdk/client/sse.js";
+export async function POST(request: Request) {
+  const json = await request.json()
+  const { chatSettings, messages, selectedMcps, modelData } = json as {
+    chatSettings: ChatSettings
+    messages: any[]
+    selectedMcps: Tables<"mcps">[]
+    modelData: LLM
+  }
 
-// export async function POST(request: Request) {
-//   const json = await request.json()
-//   const { chatSettings, messages, selectedMcps,modelData} = json as {
-//     chatSettings: ChatSettings
-//     messages: any[]
-//     selectedMcps: Tables<"mcps">[]
-//     modelData: LLM
-//   }
+  // 用于管理 MCP 客户端连接
+  let mcpClient: Client | null = null
+  let transports: Transport[] = []
 
-//   try {
-//       const profile = await getServerProfile()
+  try {
+    const profile = await getServerProfile()
+    checkApiKey(profile.openai_api_key, "OpenAI")
 
-//       checkApiKey(profile.openai_api_key, "OpenAI")
-//       let modelBaseUrl = ""
-//       let modelApiKey = ""
-//       const provider = modelData.provider === "openai" && profile.use_azure_openai
-//         ? "azure"
-//         : modelData.provider
+    let modelBaseUrl = ""
+    let modelApiKey = ""
+    let modelName = chatSettings.model
+    const provider =
+      modelData.provider === "openai" && profile.use_azure_openai
+        ? "azure"
+        : modelData.provider
+    const model_tool_call = modelData.toolCall
 
-//       if (provider === "azure") {
-//       const AzureOpenaiENDPOINT = profile.azure_openai_endpoint
-//       const AzureOpenaiKEY = profile.azure_openai_api_key
-//       let AzureOpenaiDEPLOYMENT_ID = ""
-//       switch (chatSettings.model) {
-//         case "gpt-3.5-turbo":
-//           AzureOpenaiDEPLOYMENT_ID = profile.azure_openai_35_turbo_id || ""
-//           break
-//         case "gpt-4-turbo-preview":
-//           AzureOpenaiDEPLOYMENT_ID = profile.azure_openai_45_turbo_id || ""
-//           break
-//         case "gpt-4-vision-preview":
-//           AzureOpenaiDEPLOYMENT_ID = profile.azure_openai_45_vision_id || ""
-//           break
-//         default:
-//           return new Response(JSON.stringify({ message: "Model not found" }), {
-//             status: 400
-//           })
-//       }
-//       if (!AzureOpenaiENDPOINT || !AzureOpenaiKEY || !AzureOpenaiDEPLOYMENT_ID) {
-//         return new Response(
-//           JSON.stringify({ message: "Azure resources not found" }),
-//           {
-//             status: 400
-//           }
-//         )
-//       }
-//         modelBaseUrl = `${AzureOpenaiENDPOINT}/openai/deployments/${AzureOpenaiDEPLOYMENT_ID}`
-//         modelApiKey = AzureOpenaiKEY
-//       }
-//       else if (provider === "openai") {
-//         modelBaseUrl = "https://api.openai.com/v1"
-//         modelApiKey = profile.openai_api_key || ""
-//       }
-//       else if (provider === "openrouter") {
-//         modelBaseUrl = "https://openrouter.ai/api/v1"
-//         modelApiKey = profile.openrouter_api_key || ""
-//       }
-//       else if (provider === "anthropic") {
-//         return new Response(
-//           JSON.stringify({ message: "anthropic tool not support, please wait fix" }),
-//           {
-//             status: 400
-//           }
-//         )
-//       }
-//       else if (provider === "custom") {
-//         return new Response(
-//           JSON.stringify({ message: "custom tool not support, please wait fix" }),
-//           {
-//             status: 400
-//           }
-//         )
-//       }
-//       else {
-//         return new Response(
-//           JSON.stringify({ message: "other model not support, please wait fix" }),
-//           {
-//             status: 400
-//           }
-//         )}
-//       const openai = new OpenAI({
-//         baseURL: modelBaseUrl,
-//         apiKey: modelApiKey
-//       })
+    if (model_tool_call === false) {
+      return new Response(
+        JSON.stringify({
+          message:
+            "This model does not support tool calling, please switch to another model"
+        }),
+        { status: 400 }
+      )
+    }
 
-//     let allTools: OpenAI.Chat.Completions.ChatCompletionTool[] = []
-//     const [mcpClient, setMcpClient] = useState<Client | null>(null);
-//     const client = new Client<Request, Notification, Result>(
-//       {
-//         name: "mcp-inspector",
-//         version: packageJson.version,
-//       },
-//       {
-//         capabilities: {
-//           sampling: {},
-//           roots: {
-//             listChanged: true,
-//           },
-//         },
-//       },
-//     );
+    // 配置模型提供商
+    if (provider === "azure") {
+      const AzureOpenaiENDPOINT = profile.azure_openai_endpoint
+      const AzureOpenaiKEY = profile.azure_openai_api_key
+      let AzureOpenaiDEPLOYMENT_ID = ""
 
-//     let allRouteMaps = {}
-//     // let schemaDetails = []
+      switch (chatSettings.model) {
+        case "gpt-3.5-turbo":
+          AzureOpenaiDEPLOYMENT_ID = profile.azure_openai_35_turbo_id || ""
+          break
+        case "gpt-4-turbo-preview":
+          AzureOpenaiDEPLOYMENT_ID = profile.azure_openai_45_turbo_id || ""
+          break
+        case "gpt-4-vision-preview":
+          AzureOpenaiDEPLOYMENT_ID = profile.azure_openai_45_vision_id || ""
+          break
+        default:
+          return new Response(JSON.stringify({ message: "Model not found" }), {
+            status: 400
+          })
+      }
 
-//     for (const selectedMcp of selectedMcps) {
-//       try {
-//         const convertedSchema = await mcpserverToMCP(
-//           JSON.parse(selectedMcp.schema as string)
-//         )
-//         const mcpProxyServerUrl = convertedSchema.mcpserver.url
-//         const transportOptions = {
-//                     eventSourceInit: {
-//                       fetch: (
-//                         url: string | URL | globalThis.Request,
-//                         init?: RequestInit,
-//                       ) =>
-//                         fetch(url, {
-//                           ...init,
-//                         }),
-//                     },
-//                   };
-//         const transport = new SSEClientTransport(
-//                             mcpProxyServerUrl as URL,
-//                             transportOptions,
-//                           );
-//         await client.connect(transport as Transport);
-//         setMcpClient(client);
-//         // allTools = allTools.concat(tools)
+      if (
+        !AzureOpenaiENDPOINT ||
+        !AzureOpenaiKEY ||
+        !AzureOpenaiDEPLOYMENT_ID
+      ) {
+        return new Response(
+          JSON.stringify({ message: "Azure resources not found" }),
+          { status: 400 }
+        )
+      }
 
-//         // const routeMap = convertedSchema.routes.reduce(
-//         //   (map: Record<string, string>, route) => {
-//         //     map[route.path.replace(/{(\w+)}/g, ":$1")] = route.operationId
-//         //     return map
-//         //   },
-//         //   {}
-//         // )
+      modelBaseUrl = `${AzureOpenaiENDPOINT}/openai/deployments/${AzureOpenaiDEPLOYMENT_ID}`
+      modelApiKey = AzureOpenaiKEY
+    } else if (provider === "openai") {
+      modelBaseUrl = "https://api.openai.com/v1"
+      modelApiKey = profile.openai_api_key || ""
+    } else if (provider === "openrouter") {
+      modelBaseUrl = "https://openrouter.ai/api/v1"
+      modelApiKey = profile.openrouter_api_key || ""
+    } else if (provider === "anthropic") {
+      return new Response(
+        JSON.stringify({
+          message:
+            "Anthropic tool calling not yet supported, please wait for fix"
+        }),
+        { status: 400 }
+      )
+    } else if (provider === "custom") {
+      if (model_tool_call === true) {
+        const cookieStore = cookies()
+        const supabaseAdmin = createClient(cookieStore)
+        const { data: customModel, error } = await supabaseAdmin
+          .from("models")
+          .select("*")
+          .eq("model_id", modelData.modelId)
+          .single()
 
-//         // allRouteMaps = { ...allRouteMaps, ...routeMap }
+        if (!customModel && error) {
+          throw new Error(error.message)
+        }
+        modelName = customModel.model_id
+        modelBaseUrl = customModel.base_url
+        modelApiKey = customModel.api_key || ""
+      } else {
+        return new Response(
+          JSON.stringify({
+            message:
+              "This model does not support tool calling, please switch to another model"
+          }),
+          { status: 400 }
+        )
+      }
+    } else {
+      return new Response(
+        JSON.stringify({
+          message: "Other models not yet supported, please wait for fix"
+        }),
+        { status: 400 }
+      )
+    }
 
-//         // schemaDetails.push({
-//         //   title: convertedSchema.info.title,
-//         //   description: convertedSchema.info.description,
-//         //   url: convertedSchema.info.server,
-//         //   headers: selectedTool.custom_headers,
-//         //   routeMap,
-//         //   requestInBody: convertedSchema.routes[0].requestInBody
-//         // })
-//       } catch (error: any) {
-//         console.error("Error converting schema", error)
-//       }
-//     }
+    console.log("modelName", modelName)
+    console.log("modelBaseUrl", modelBaseUrl)
+    console.log("modelApiKey", modelApiKey?.substring(0, 4) + "****")
 
-//     // let response =
-//     const list_tool_response = {
-//       "jsonrpc": "2.0",
-//       "id": 1,
-//       "result": {
-//         "tools": [
-//           {
-//             "name": "multiply",
-//             "inputSchema": {
-//               "type": "object",
-//               "properties": {
-//                 "a": {
-//                   "type": "number"
-//                 },
-//                 "b": {
-//                   "type": "number"
-//                 }
-//               },
-//               "required": [
-//                 "a",
-//                 "b"
-//               ],
-//               "additionalProperties": false,
-//               "$schema": "http://json-schema.org/draft-07/schema#"
-//             }
-//           },
-//           {
-//             "name": "greet",
-//             "inputSchema": {
-//               "type": "object",
-//               "properties": {
-//                 "name": {
-//                   "type": "string"
-//                 }
-//               },
-//               "required": [
-//                 "name"
-//               ],
-//               "additionalProperties": false,
-//               "$schema": "http://json-schema.org/draft-07/schema#"
-//             }
-//           },
-//           {
-//             "name": "checkPalindrome",
-//             "inputSchema": {
-//               "type": "object",
-//               "properties": {
-//                 "text": {
-//                   "type": "string"
-//                 }
-//               },
-//               "required": [
-//                 "text"
-//               ],
-//               "additionalProperties": false,
-//               "$schema": "http://json-schema.org/draft-07/schema#"
-//             }
-//           },
-//           {
-//             "name": "serverInfo",
-//             "inputSchema": {
-//               "type": "object",
-//               "properties": {},
-//               "additionalProperties": false,
-//               "$schema": "http://json-schema.org/draft-07/schema#"
-//             }
-//           },
-//           {
-//             "name": "askFavoritePoem",
-//             "inputSchema": {
-//               "type": "object",
-//               "properties": {},
-//               "additionalProperties": false,
-//               "$schema": "http://json-schema.org/draft-07/schema#"
-//             }
-//           }
-//         ]
-//       }
-//     }
-//     // 收集所有工具
-//     for (const list_tool_response_result_tool of list_tool_response.result.tools) {
-//       const mcp_tool = {
-//         type: "function",
-//         function: {
-//           name: list_tool_response_result_tool.name,
-//           description: "description",
-//           parameters: list_tool_response_result_tool.inputSchema // 假设 inputSchema 为 JSON Schema
-//         }
-//       }
-//       allTools.concat(mcp_tool)
+    const openai = new OpenAI({
+      baseURL: modelBaseUrl,
+      apiKey: modelApiKey
+    })
 
-//       const firstResponse = await openai.chat.completions.create({
-//         model: chatSettings.model as ChatCompletionCreateParamsBase["model"],
-//         messages,
-//         tools: allTools.length > 0 ? allTools : undefined
-//       })
+    let allTools: OpenAI.Chat.Completions.ChatCompletionTool[] = []
+    mcpClient = new Client({
+      name: "chatbot-ui-mcp-client",
+      version: packageJson.version
+    })
 
-//       const message = firstResponse.choices[0].message
-//       messages.push(message)
-//       const toolCalls = message.tool_calls || []
+    let schemaDetails: Array<{
+      name: string
+      description: string
+      url: string
+      headers?: any
+    }> = []
 
-//       if (toolCalls.length === 0) {
-//         return new Response(message.content, {
-//           headers: {
-//             "Content-Type": "application/json"
-//           }
-//         })
-//       }
+    // 连接所有 MCP 服务器
+    for (const selectedMcp of selectedMcps) {
+      try {
+        const convertedSchema = await mcpserverToMCP(
+          JSON.parse(selectedMcp.schema as string)
+        )
+        const serverUrl = convertedSchema.mcpserver.url
+        const transportType = convertedSchema.mcpserver.type
 
-//       if (toolCalls.length > 0) {
-//         for (const toolCall of toolCalls) {
-//           const functionCall = toolCall.function
-//           const functionName = functionCall.name
-//           const argumentsString = toolCall.function.arguments.trim()
-//           const parsedArgs = JSON.parse(argumentsString)
+        console.log(
+          "Connecting to MCP Server:",
+          serverUrl,
+          "Type:",
+          transportType
+        )
 
-//           // Find the schema detail that contains the function name
-//           const schemaDetail = schemaDetails.find(detail =>
-//             Object.values(detail.routeMap).includes(functionName)
-//           )
+        const headers: HeadersInit = {}
+        const requestHeaders = { ...headers }
+        let transportOptions:
+          | StreamableHTTPClientTransportOptions
+          | SSEClientTransportOptions
 
-//           if (!schemaDetail) {
-//             throw new Error(`Function ${functionName} not found in any schema`)
-//           }
+        switch (transportType) {
+          case "sse":
+            requestHeaders["Accept"] = "text/event-stream"
+            requestHeaders["content-type"] = "application/json"
+            transportOptions = {
+              fetch: async (
+                url: string | URL | globalThis.Request,
+                init?: RequestInit
+              ) => {
+                const response = await fetch(url, {
+                  ...init,
+                  headers: requestHeaders
+                })
+                return response
+              },
+              requestInit: {
+                headers: requestHeaders
+              }
+            }
+            break
+          case "streamable-http":
+            transportOptions = {
+              fetch: async (
+                url: string | URL | globalThis.Request,
+                init?: RequestInit
+              ) => {
+                requestHeaders["Accept"] = "text/event-stream, application/json"
+                requestHeaders["Content-Type"] = "application/json"
+                const response = await fetch(url, {
+                  headers: requestHeaders,
+                  ...init
+                })
+                return response
+              },
+              requestInit: {
+                headers: requestHeaders
+              },
+              reconnectionOptions: {
+                maxReconnectionDelay: 30000,
+                initialReconnectionDelay: 1000,
+                reconnectionDelayGrowFactor: 1.5,
+                maxRetries: 2
+              }
+            }
+            break
+          default:
+            throw new Error(`Unsupported transport type: ${transportType}`)
+        }
 
-//           const pathTemplate = Object.keys(schemaDetail.routeMap).find(
-//             key => schemaDetail.routeMap[key] === functionName
-//           )
+        const transport =
+          transportType === "streamable-http"
+            ? new StreamableHTTPClientTransport(serverUrl, {
+                sessionId: undefined,
+                ...transportOptions
+              })
+            : new SSEClientTransport(serverUrl, transportOptions)
 
-//           if (!pathTemplate) {
-//             throw new Error(`Path for function ${functionName} not found`)
-//           }
+        await mcpClient.connect(transport as Transport)
+        transports.push(transport as Transport)
 
-//           const path = pathTemplate.replace(/:(\w+)/g, (_, paramName) => {
-//             const value = parsedArgs.parameters[paramName]
-//             if (!value) {
-//               throw new Error(
-//                 `Parameter ${paramName} not found for function ${functionName}`
-//               )
-//             }
-//             return encodeURIComponent(value)
-//           })
+        schemaDetails.push({
+          name: convertedSchema.mcpserver.name,
+          description: selectedMcp.description || "",
+          url: convertedSchema.mcpserver.url.toString(),
+          headers: selectedMcp.custom_headers
+        })
 
-//           if (!path) {
-//             throw new Error(`Path for function ${functionName} not found`)
-//           }
+        console.log("Successfully connected to MCP Server:", serverUrl)
+      } catch (error: any) {
+        console.error("Error connecting to MCP server:", error)
+        throw new Error(`Failed to connect to MCP server: ${error.message}`)
+      }
+    }
 
-//           // Determine if the request should be in the body or as a query
-//           const isRequestInBody = schemaDetail.requestInBody
-//           let data = {}
+    // 获取所有可用工具
+    const toolsResult = await mcpClient?.listTools()
+    for (const tool of toolsResult?.tools || []) {
+      const mcp_tool = {
+        type: "function",
+        function: {
+          name: tool.name,
+          description: tool.description || "No description provided",
+          parameters: tool.inputSchema
+        }
+      } as OpenAI.Chat.Completions.ChatCompletionTool
+      allTools.push(mcp_tool)
+    }
 
-//           if (isRequestInBody) {
-//             // If the type is set to body
-//             let headers = {
-//               "Content-Type": "application/json"
-//             }
+    console.log("Available tools:", allTools.length)
 
-//             // Check if custom headers are set
-//             const customHeaders = schemaDetail.headers // Moved this line up to the loop
-//             // Check if custom headers are set and are of type string
-//             if (customHeaders && typeof customHeaders === "string") {
-//               let parsedCustomHeaders = JSON.parse(customHeaders) as Record<
-//                 string,
-//                 string
-//               >
+    // 第一次调用 - 获取工具调用
+    const firstResponse = await openai.chat.completions.create({
+      model: modelName as ChatCompletionCreateParamsBase["model"],
+      messages,
+      tools: allTools.length > 0 ? allTools : undefined,
+      tool_choice: allTools.length > 0 ? "auto" : undefined
+    })
 
-//               headers = {
-//                 ...headers,
-//                 ...parsedCustomHeaders
-//               }
-//             }
+    const message = firstResponse.choices[0].message
+    messages.push(message)
+    const toolCalls = message.tool_calls || []
 
-//             const fullUrl = schemaDetail.url + path
+    // 如果没有工具调用，直接返回
+    if (toolCalls.length === 0) {
+      await cleanupMCPConnections(mcpClient, transports)
+      return new Response(message.content, {
+        headers: {
+          "Content-Type": "text/plain"
+        }
+      })
+    }
 
-//             const bodyContent = parsedArgs.requestBody || parsedArgs
+    // 创建流式响应
+    const encoder = new TextEncoder()
+    const stream = new ReadableStream({
+      async start(controller) {
+        try {
+          // 输出工具调用信息
+          for (const toolCall of toolCalls) {
+            const functionCall = toolCall.function
+            const functionName = functionCall.name
+            const argumentsString = toolCall.function.arguments.trim()
+            const parsedArgs = JSON.parse(argumentsString)
 
-//             const requestInit = {
-//               method: "POST",
-//               headers,
-//               body: JSON.stringify(bodyContent) // Use the extracted requestBody or the entire parsedArgs
-//             }
+            // 流式输出工具调用开始信息
+            const toolCallStartMessage = `\n🔧 **Calling Tool**: ${functionName}\n📝 **Arguments**: ${JSON.stringify(parsedArgs, null, 2)}\n\n`
+            controller.enqueue(encoder.encode(toolCallStartMessage))
 
-//             const response = await fetch(fullUrl, requestInit)
+            try {
+              // 调用工具
+              const result = await mcpClient?.callTool({
+                name: functionName,
+                arguments: parsedArgs
+              })
 
-//             if (!response.ok) {
-//               data = {
-//                 error: response.statusText
-//               }
-//             } else {
-//               data = await response.json()
-//             }
-//           } else {
-//             // If the type is set to query
-//             const queryParams = new URLSearchParams(
-//               parsedArgs.parameters
-//             ).toString()
-//             const fullUrl =
-//               schemaDetail.url + path + (queryParams ? "?" + queryParams : "")
+              // 流式输出工具调用结果
+              const resultContent = JSON.stringify(
+                result?.content || {},
+                null,
+                2
+              )
+              const toolCallResultMessage = `✅ **Tool Result**:\n\`\`\`json\n${resultContent}\n\`\`\`\n\n`
+              controller.enqueue(encoder.encode(toolCallResultMessage))
 
-//             let headers = {}
+              // 添加到消息历史
+              messages.push({
+                role: "tool",
+                tool_call_id: toolCall.id,
+                name: functionName,
+                content: JSON.stringify(result?.content || "")
+              })
+            } catch (toolError: any) {
+              const errorMessage = `❌ **Tool Error**: ${toolError.message}\n\n`
+              controller.enqueue(encoder.encode(errorMessage))
+              console.error(`Error calling tool ${functionName}:`, toolError)
+            }
+          }
 
-//             // Check if custom headers are set
-//             const customHeaders = schemaDetail.headers
-//             if (customHeaders && typeof customHeaders === "string") {
-//               headers = JSON.parse(customHeaders)
-//             }
+          // 输出分隔符
+          controller.enqueue(encoder.encode("\n---\n\n💬 **AI Response**:\n\n"))
 
-//             const response = await fetch(fullUrl, {
-//               method: "GET",
-//               headers: headers
-//             })
+          // 第二次调用 - 获取最终响应
+          const secondResponse = await openai.chat.completions.create({
+            model: modelName as ChatCompletionCreateParamsBase["model"],
+            messages,
+            stream: true
+          })
 
-//             if (!response.ok) {
-//               data = {
-//                 error: response.statusText
-//               }
-//             } else {
-//               data = await response.json()
-//             }
-//           }
+          // 流式输出最终响应
+          for await (const chunk of secondResponse) {
+            const content = chunk.choices[0]?.delta?.content || ""
+            if (content) {
+              controller.enqueue(encoder.encode(content))
+            }
+          }
 
-//           messages.push({
-//             tool_call_id: toolCall.id,
-//             role: "tool",
-//             name: functionName,
-//             content: JSON.stringify(data)
-//           })
-//         }
-//       }
+          controller.close()
+        } catch (error: any) {
+          console.error("Stream error:", error)
+          controller.error(error)
+        } finally {
+          // 清理 MCP 连接
+          await cleanupMCPConnections(mcpClient, transports)
+        }
+      },
+      cancel() {
+        // 当客户端取消流时清理连接
+        cleanupMCPConnections(mcpClient, transports)
+      }
+    })
 
-//       const secondResponse = await openai.chat.completions.create({
-//         model: chatSettings.model as ChatCompletionCreateParamsBase["model"],
-//         messages,
-//         stream: true
-//       })
+    return new Response(stream, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Transfer-Encoding": "chunked"
+      }
+    })
+  } catch (error: any) {
+    console.error("Error in POST handler:", error)
 
-//       const stream = OpenAIStream(secondResponse)
+    // 确保清理连接
+    await cleanupMCPConnections(mcpClient, transports)
 
-//       return new StreamingTextResponse(stream)
-//     } catch (error: any) {
-//       console.error(error)
-//       const errorMessage = error.error?.message || "An unexpected error occurred"
-//       const errorCode = error.status || 500
-//       return new Response(JSON.stringify({ message: errorMessage }), {
-//         status: errorCode
-//       })
-//     }
-//   }
-// }
+    const errorMessage = error?.message || "An unexpected error occurred"
+    const errorCode = error.status || 500
+    return new Response(JSON.stringify({ message: errorMessage }), {
+      status: errorCode,
+      headers: {
+        "Content-Type": "application/json"
+      }
+    })
+  }
+}
+
+/**
+ * 优雅地关闭 MCP 连接
+ */
+async function cleanupMCPConnections(
+  mcpClient: Client | null,
+  transports: Transport[]
+) {
+  try {
+    if (mcpClient) {
+      console.log("Closing MCP client connections...")
+
+      // 关闭客户端
+      await mcpClient.close()
+
+      // 关闭所有传输层
+      for (const transport of transports) {
+        try {
+          await transport.close()
+        } catch (err) {
+          console.error("Error closing transport:", err)
+        }
+      }
+
+      console.log("MCP connections closed successfully")
+    }
+  } catch (error) {
+    console.error("Error during MCP cleanup:", error)
+  }
+}

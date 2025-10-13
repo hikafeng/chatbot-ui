@@ -14,7 +14,8 @@ const MIXTRAL_8X7B_INSTRUCT: LLM = {
   provider: "perplexity",
   hostedId: "mixtral-8x7b-instruct",
   platformLink: PERPLEXITY_PLATORM_LINK,
-  imageInput: false
+  imageInput: false,
+  toolCall: false
 }
 
 // Mistral 7B Instruct (UPDATED 1/31/24)
@@ -24,7 +25,8 @@ const MISTRAL_7B_INSTRUCT: LLM = {
   provider: "perplexity",
   hostedId: "mistral-7b-instruct",
   platformLink: PERPLEXITY_PLATORM_LINK,
-  imageInput: false
+  imageInput: false,
+  toolCall: false
 }
 
 // CodeLlama 70B Instruct (UPDATED 1/31/24)
@@ -34,7 +36,8 @@ const CODELLAMA_70B_INSTRUCT: LLM = {
   provider: "perplexity",
   hostedId: "codellama-70b-instruct",
   platformLink: PERPLEXITY_PLATORM_LINK,
-  imageInput: false
+  imageInput: false,
+  toolCall: false
 }
 
 // Sonar Small Chat (UPDATED 2/25/24)
@@ -44,7 +47,8 @@ const PERPLEXITY_SONAR_SMALL_CHAT_7B: LLM = {
   provider: "perplexity",
   hostedId: "sonar-small-chat",
   platformLink: PERPLEXITY_PLATORM_LINK,
-  imageInput: false
+  imageInput: false,
+  toolCall: false
 }
 
 // Sonar Small Online (UPDATED 2/25/24)
@@ -54,7 +58,8 @@ const PERPLEXITY_SONAR_SMALL_ONLINE_7B: LLM = {
   provider: "perplexity",
   hostedId: "sonar-small-online",
   platformLink: PERPLEXITY_PLATORM_LINK,
-  imageInput: false
+  imageInput: false,
+  toolCall: false
 }
 
 // Sonar Medium Chat (UPDATED 2/25/24)
@@ -64,7 +69,8 @@ const PERPLEXITY_SONAR_MEDIUM_CHAT_8x7B: LLM = {
   provider: "perplexity",
   hostedId: "sonar-medium-chat",
   platformLink: PERPLEXITY_PLATORM_LINK,
-  imageInput: false
+  imageInput: false,
+  toolCall: false
 }
 
 // Sonar Medium Online (UPDATED 2/25/24)
@@ -74,7 +80,8 @@ const PERPLEXITY_SONAR_MEDIUM_ONLINE_8x7B: LLM = {
   provider: "perplexity",
   hostedId: "sonar-medium-online",
   platformLink: PERPLEXITY_PLATORM_LINK,
-  imageInput: false
+  imageInput: false,
+  toolCall: false
 }
 
 export const PERPLEXITY_LLM_LIST: LLM[] = [

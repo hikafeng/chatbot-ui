@@ -68,6 +68,7 @@ export const usePromptAndCommand = () => {
       setSlashCommand("")
       setHashtagCommand("")
       setToolCommand("")
+      setMcpCommand("")
       setAtCommand("")
     }
 
@@ -145,7 +146,7 @@ export const usePromptAndCommand = () => {
 
   const handleSelectMcp = (mcp: Tables<"mcps">) => {
     setIsMcpPickerOpen(false)
-    setUserInput(userInput.replace(/![^ ]*$/, ""))
+    setUserInput(userInput.replace(/~[^ ]*$/, ""))
     setSelectedMcps(prev => [...prev, mcp])
   }
   const handleSelectAssistant = async (assistant: Tables<"assistants">) => {

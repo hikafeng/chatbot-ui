@@ -59,7 +59,8 @@ export const ModelSelect: FC<ModelSelectProps> = ({
       provider: "custom" as ModelProvider,
       hostedId: model.id,
       platformLink: "",
-      imageInput: false
+      imageInput: false,
+      toolCall: false
     })),
     ...availableHostedModels,
     ...availableLocalModels,

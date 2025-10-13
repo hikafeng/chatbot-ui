@@ -27,7 +27,7 @@ export const ModelItem: FC<ModelItemProps> = ({ model }) => {
   const [name, setName] = useState(model.name)
   const [contextLength, setContextLength] = useState(model.context_length)
   const [imageInput, setImageInput] = useState(false)
-
+  const [toolCall, setToolCall] = useState(false)
   return (
     <SidebarItem
       item={model}
@@ -110,7 +110,7 @@ export const ModelItem: FC<ModelItemProps> = ({ model }) => {
             <Label>Vision Support</Label>
             <Select onValueChange={value => setImageInput(value === "true")}>
               <SelectTrigger>
-                <SelectValue placeholder="Select vision support" />
+                <SelectValue placeholder={imageInput ? "True" : "False"} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="true">True</SelectItem>
@@ -118,7 +118,18 @@ export const ModelItem: FC<ModelItemProps> = ({ model }) => {
               </SelectContent>
             </Select>
           </div>
-
+          <div className="space-y-1">
+            <Label>Tool Call Support</Label>
+            <Select onValueChange={value => setToolCall(value === "true")}>
+              <SelectTrigger>
+                <SelectValue placeholder={toolCall ? "True" : "False"} />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">True</SelectItem>
+                <SelectItem value="false">False</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="space-y-1">
             <Label>Max Context Length</Label>
 

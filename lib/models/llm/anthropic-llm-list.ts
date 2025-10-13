@@ -13,6 +13,7 @@ const CLAUDE_2: LLM = {
   hostedId: "claude-2.1",
   platformLink: ANTHROPIC_PLATFORM_LINK,
   imageInput: false,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -29,6 +30,8 @@ const CLAUDE_INSTANT: LLM = {
   hostedId: "claude-instant-1.2",
   platformLink: ANTHROPIC_PLATFORM_LINK,
   imageInput: false,
+  toolCall: false,
+
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -45,6 +48,7 @@ const CLAUDE_3_HAIKU: LLM = {
   hostedId: "claude-3-haiku-20240307",
   platformLink: ANTHROPIC_PLATFORM_LINK,
   imageInput: true,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -61,6 +65,7 @@ const CLAUDE_3_SONNET: LLM = {
   hostedId: "claude-3-sonnet-20240229",
   platformLink: ANTHROPIC_PLATFORM_LINK,
   imageInput: true,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -77,6 +82,7 @@ const CLAUDE_3_OPUS: LLM = {
   hostedId: "claude-3-opus-20240229",
   platformLink: ANTHROPIC_PLATFORM_LINK,
   imageInput: true,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -93,6 +99,7 @@ const CLAUDE_3_5_SONNET: LLM = {
   hostedId: "claude-3-5-sonnet-20240620",
   platformLink: ANTHROPIC_PLATFORM_LINK,
   imageInput: true,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",

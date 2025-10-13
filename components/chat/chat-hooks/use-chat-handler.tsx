@@ -229,8 +229,9 @@ export const useChatHandler = () => {
           modelName: model.name,
           provider: "custom" as ModelProvider,
           hostedId: model.id,
-          platformLink: "",
-          imageInput: false
+          platformLink: model.base_url,
+          imageInput: model.image_input,
+          toolCall: model.tool_call
         })),
         ...LLM_LIST,
         ...availableLocalModels,

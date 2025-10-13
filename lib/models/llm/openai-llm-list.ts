@@ -10,6 +10,7 @@ const GPT4o: LLM = {
   hostedId: "gpt-4o",
   platformLink: OPENAI_PLATORM_LINK,
   imageInput: true,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -26,6 +27,7 @@ const GPT4Turbo: LLM = {
   hostedId: "gpt-4-turbo-preview",
   platformLink: OPENAI_PLATORM_LINK,
   imageInput: true,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -42,6 +44,7 @@ const GPT4Vision: LLM = {
   hostedId: "gpt-4-vision-preview",
   platformLink: OPENAI_PLATORM_LINK,
   imageInput: true,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -57,6 +60,7 @@ const GPT4: LLM = {
   hostedId: "gpt-4",
   platformLink: OPENAI_PLATORM_LINK,
   imageInput: false,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -73,6 +77,7 @@ const GPT3_5Turbo: LLM = {
   hostedId: "gpt-3.5-turbo",
   platformLink: OPENAI_PLATORM_LINK,
   imageInput: false,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",

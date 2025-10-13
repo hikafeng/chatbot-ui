@@ -30,7 +30,7 @@ export const CreateModel: FC<CreateModelProps> = ({ isOpen, onOpenChange }) => {
   const [name, setName] = useState("")
   const [contextLength, setContextLength] = useState(4096)
   const [imageInput, setImageInput] = useState(false)
-
+  const [toolCall, setToolCall] = useState(false)
   if (!profile || !selectedWorkspace) return null
 
   return (
@@ -48,6 +48,7 @@ export const CreateModel: FC<CreateModelProps> = ({ isOpen, onOpenChange }) => {
           context_length: contextLength,
           model_id: modelId,
           image_input: imageInput,
+          tool_call: toolCall,
           name
         } as TablesInsert<"models">
       }
@@ -115,6 +116,18 @@ export const CreateModel: FC<CreateModelProps> = ({ isOpen, onOpenChange }) => {
           <div className="space-y-1">
             <Label>Vision Support</Label>
             <Select onValueChange={value => setImageInput(value === "true")}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select vision support" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="true">True</SelectItem>
+                <SelectItem value="false">False</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>Tool Call Support</Label>
+            <Select onValueChange={value => setToolCall(value === "true")}>
               <SelectTrigger>
                 <SelectValue placeholder="Select vision support" />
               </SelectTrigger>
