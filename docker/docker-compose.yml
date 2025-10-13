@@ -525,18 +525,18 @@ services:
         "/app/bin/migrate && /app/bin/supavisor eval \"$$(cat /etc/pooler/pooler.exs)\" && /app/bin/server"
       ]
 
-  # web:
-  #   container_name: chatbot-ui
-  #   image: hikafeng/chatbot-ui:latest
-  #   build:
-  #     context: ../
-  #   restart: always
-  #   environment:
-  #     HTTP_PROXY: ${HTTP_PROXY:-}
-  #     HTTPS_PROXY: ${HTTPS_PROXY:-}
-  #     NO_PROXY: ${NO_PROXY:-} # 可选，不需要代理的地址
-  #   ports:
-  #     - ${WEB_EXPOSE_PORTS:-3000}:${WEB_PORTS:-3000}
+  web:
+    container_name: chatbot-ui
+    image: hikafeng/chatbot-ui:latest
+    build:
+      context: ../
+    restart: always
+    environment:
+      HTTP_PROXY: ${HTTP_PROXY:-}
+      HTTPS_PROXY: ${HTTPS_PROXY:-}
+      NO_PROXY: ${NO_PROXY:-} # 可选，不需要代理的地址
+    ports:
+      - ${WEB_EXPOSE_PORTS:-3000}:${WEB_PORTS:-3000}
 volumes:
   db-config:
 
