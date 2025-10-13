@@ -124,16 +124,25 @@ export const fetchOpenRouterModels = async (openrouter_api_key: any) => {
 
   const openRouterModels = data.map(
     (model: {
+      architecture: {
+        modality: string
+        input_modalities: string[]
+        output_modalities: string[]
+        tokenizer: string
+        instruct_type: string | null
+      }
       id: string
       name: string
       context_length: number
+      supported_parameters: string[]
     }): OpenRouterLLM => ({
       modelId: model.id as LLMID,
       modelName: model.id,
       provider: "openrouter",
       hostedId: model.name,
       platformLink: "https://openrouter.dev",
-      imageInput: false,
+      imageInput: model.architecture.input_modalities.includes("image"),
+      toolCall: model.supported_parameters.includes("tools"),
       maxContext: model.context_length
     })
   )
@@ -202,6 +211,7 @@ export const fetchDeepSeekModels = async (deepseek_api_key: any) => {
       hostedId: model.id,
       platformLink: "https://api.deepseek.com",
       imageInput: true,
+      toolCall: false,
       maxContext: 65536
     })
   )

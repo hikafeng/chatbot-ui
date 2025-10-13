@@ -983,6 +983,7 @@ export type Database = {
           id: string
           model_id: string
           image_input:boolean
+          tool_call:boolean
           name: string
           sharing: string
           updated_at: string | null
@@ -998,6 +999,7 @@ export type Database = {
           id?: string
           model_id: string
           image_input?:boolean
+          tool_call?:boolean
           name: string
           sharing?: string
           updated_at?: string | null
@@ -1013,6 +1015,7 @@ export type Database = {
           id?: string
           model_id?: string
           image_input?:boolean
+          tool_call?:boolean
           name?: string
           sharing?: string
           updated_at?: string | null

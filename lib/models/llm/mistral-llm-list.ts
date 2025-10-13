@@ -11,7 +11,8 @@ const MISTRAL_7B: LLM = {
   provider: "mistral",
   hostedId: "mistral-tiny",
   platformLink: MISTRAL_PLATORM_LINK,
-  imageInput: false
+  imageInput: false,
+  toolCall: false
 }
 
 // Mixtral (UPDATED 12/21/23)
@@ -22,6 +23,7 @@ const MIXTRAL: LLM = {
   hostedId: "mistral-small-latest",
   platformLink: MISTRAL_PLATORM_LINK,
   imageInput: false,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -38,6 +40,7 @@ const MISTRAL_MEDIUM: LLM = {
   hostedId: "mistral-medium-latest",
   platformLink: MISTRAL_PLATORM_LINK,
   imageInput: false,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -54,6 +57,7 @@ const MISTRAL_LARGE: LLM = {
   hostedId: "mistral-large-latest",
   platformLink: MISTRAL_PLATORM_LINK,
   imageInput: false,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",

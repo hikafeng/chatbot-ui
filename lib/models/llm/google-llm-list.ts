@@ -11,7 +11,8 @@ const GEMINI_1_5_FLASH: LLM = {
   provider: "google",
   hostedId: "gemini-1.5-flash",
   platformLink: GOOGLE_PLATORM_LINK,
-  imageInput: true
+  imageInput: true,
+  toolCall: false
 }
 
 // Gemini 1.5 Pro (UPDATED 05/28/24)
@@ -21,7 +22,8 @@ const GEMINI_1_5_PRO: LLM = {
   provider: "google",
   hostedId: "gemini-1.5-pro-latest",
   platformLink: GOOGLE_PLATORM_LINK,
-  imageInput: true
+  imageInput: true,
+  toolCall: false
 }
 
 // Gemini Pro (UPDATED 12/22/23)
@@ -31,7 +33,8 @@ const GEMINI_PRO: LLM = {
   provider: "google",
   hostedId: "gemini-pro",
   platformLink: GOOGLE_PLATORM_LINK,
-  imageInput: false
+  imageInput: false,
+  toolCall: false
 }
 
 // Gemini Pro Vision (UPDATED 12/22/23)
@@ -41,7 +44,8 @@ const GEMINI_PRO_VISION: LLM = {
   provider: "google",
   hostedId: "gemini-pro-vision",
   platformLink: GOOGLE_PLATORM_LINK,
-  imageInput: true
+  imageInput: true,
+  toolCall: false
 }
 
 export const GOOGLE_LLM_LIST: LLM[] = [

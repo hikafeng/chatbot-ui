@@ -9,6 +9,7 @@ const LLaMA3_8B: LLM = {
   hostedId: "llama3-8b-8192",
   platformLink: GROQ_PLATORM_LINK,
   imageInput: false,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -24,6 +25,7 @@ const LLaMA3_70B: LLM = {
   hostedId: "llama3-70b-4096",
   platformLink: GROQ_PLATORM_LINK,
   imageInput: false,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -39,6 +41,7 @@ const MIXTRAL_8X7B: LLM = {
   hostedId: "mixtral-8x7b-32768",
   platformLink: GROQ_PLATORM_LINK,
   imageInput: false,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",
@@ -54,6 +57,7 @@ const GEMMA_7B_IT: LLM = {
   hostedId: "gemma-7b-it",
   platformLink: GROQ_PLATORM_LINK,
   imageInput: false,
+  toolCall: false,
   pricing: {
     currency: "USD",
     unit: "1M tokens",

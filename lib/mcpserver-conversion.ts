@@ -50,7 +50,7 @@ export const mcpserverToMCP = async (
     mcpserver: {
       name: serverName,
       type: server.type,
-      url: server.url
+      url: new URL(server.url)
     }
   }
 }
