@@ -35,7 +35,7 @@ export async function POST(request: Request) {
 
   try {
     const profile = await getServerProfile()
-    checkApiKey(profile.openai_api_key, "OpenAI")
+    // checkApiKey(profile.openai_api_key, "OpenAI")
 
     let modelBaseUrl = ""
     let modelApiKey = ""
