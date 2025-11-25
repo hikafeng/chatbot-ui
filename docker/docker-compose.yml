@@ -529,7 +529,7 @@ services:
     container_name: chatbot-ui
     image: hikafeng/chatbot-ui:latest
     build:
-      context: ../
+      context: ../web
     restart: always
     environment:
       HTTP_PROXY: ${HTTP_PROXY:-}

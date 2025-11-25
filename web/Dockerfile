@@ -1,5 +1,5 @@
 # base image
-FROM node:18.20.8-slim AS base
+FROM node:22-slim AS base
 
 LABEL maintainer="hikafeng@163.com"
 

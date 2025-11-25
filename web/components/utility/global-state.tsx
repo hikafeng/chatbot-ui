@@ -98,7 +98,8 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   // ACTIVE CHAT STORE
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
   const [firstTokenReceived, setFirstTokenReceived] = useState<boolean>(false)
-  const [abortController, setAbortController] = useState<AbortController | null>(null)
+  const [abortController, setAbortController] =
+    useState<AbortController | null>(null)
   const [isThinkingEnabled, setIsThinkingEnabled] = useState<boolean>(false)
 
   // CHAT INPUT COMMAND STORE

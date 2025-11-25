@@ -272,7 +272,7 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
           <div className="absolute bottom-[12px] left-3">
             <div
               onClick={() => fileInputRef.current?.click()}
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              className="text-muted-foreground hover:bg-accent hover:text-foreground flex size-8 cursor-pointer items-center justify-center rounded-full transition-colors"
               title={t("Upload file")}
             >
               <IconCirclePlus size={24} stroke={1.5} />
@@ -294,7 +294,7 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
 
         <TextareaAutosize
           textareaRef={chatInputRef}
-          className="ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring text-md flex w-full resize-none rounded-md border-none bg-transparent pl-14 pr-28 py-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring text-md flex w-full resize-none rounded-md border-none bg-transparent py-2 pl-14 pr-28 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           placeholder={t("Ask anything. Type @  /  #  ! ~")}
           onValueChange={handleInputChange}
           value={userInput}
@@ -310,17 +310,27 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
           <div
             onClick={() => setIsThinkingEnabled(!isThinkingEnabled)}
             className={cn(
-              "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-accent",
-              isThinkingEnabled ? "text-yellow-500" : "text-muted-foreground hover:text-foreground"
+              "hover:bg-accent flex size-8 cursor-pointer items-center justify-center rounded-full transition-colors",
+              isThinkingEnabled
+                ? "text-yellow-500"
+                : "text-muted-foreground hover:text-foreground"
             )}
-            title={isThinkingEnabled ? t("Disable Deep Thinking") : t("Enable Deep Thinking")}
+            title={
+              isThinkingEnabled
+                ? t("Disable Deep Thinking")
+                : t("Enable Deep Thinking")
+            }
           >
-            {isThinkingEnabled ? <IconBulbFilled size={24} /> : <IconBulb size={24} stroke={1.5} />}
+            {isThinkingEnabled ? (
+              <IconBulbFilled size={24} />
+            ) : (
+              <IconBulb size={24} stroke={1.5} />
+            )}
           </div>
 
           {isGenerating ? (
             <div
-              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:opacity-90"
+              className="bg-destructive text-destructive-foreground flex size-8 cursor-pointer items-center justify-center rounded-full hover:opacity-90"
               onClick={handleStopMessage}
               title={t("Stop generating")}
             >
@@ -329,7 +339,7 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
           ) : (
             <div
               className={cn(
-                "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90",
+                "bg-primary text-primary-foreground flex size-8 cursor-pointer items-center justify-center rounded-full transition-opacity hover:opacity-90",
                 !userInput && "cursor-not-allowed opacity-50"
               )}
               onClick={() => {
