@@ -3,12 +3,14 @@ const withBundleAnalyzer = require("@next/bundle-analyzer")({
 })
 
 const withPWA = require("next-pwa")({
-  dest: "public"
+  dest: "public",
+  disable: process.env.NODE_ENV === 'development'
 })
 
 module.exports = withBundleAnalyzer(
   withPWA({
     reactStrictMode: true,
+    output: 'standalone',
     images: {
       remotePatterns: [
         {
@@ -23,10 +25,12 @@ module.exports = withBundleAnalyzer(
           protocol: "https",
           hostname: "**"
         }
-      ]
+      ],
+      unoptimized: true,
     },
     experimental: {
       serverComponentsExternalPackages: ["sharp", "onnxruntime-node"]
     }
   })
 )
+

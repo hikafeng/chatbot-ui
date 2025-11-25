@@ -12,7 +12,9 @@ module.exports = {
       center: true,
       padding: '2rem',
       screens: {
-        '2xl': '1400px'
+        '2xl': '1400px', // 保持原样
+        '3xl': '1920px', // 保持原样
+        '4xl': '2560px'  // 添加4K屏幕支持，考虑到实际使用中可能不会全屏显示网页，这里选择一个稍小于3840px的值
       }
     },
     extend: {

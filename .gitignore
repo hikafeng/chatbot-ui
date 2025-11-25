@@ -1,14 +1,16 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
-/node_modules
-/.pnp
+node_modules/*
+node_modules
+.pnp
 .pnp.js
 .yarn/install-state.gz
-
+hikafeng.md
 # testing
 /coverage
-
+**/.env
+.env.pm2
 # next.js
 /.next/
 /out/
@@ -28,7 +30,6 @@ yarn-error.log*
 # local env files
 .env
 .env*.local
-
 # vercel
 .vercel
 
@@ -44,3 +45,10 @@ sw.js
 sw.js.map
 workbox-*.js
 workbox-*.js.map
+
+# docker volume
+./docker/volumes/
+# local env files
+./docker/.env
+
+.env.docker
