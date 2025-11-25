@@ -4,6 +4,8 @@ import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import { cn } from "@/lib/utils"
 import {
   IconBolt,
+  IconBulb,
+  IconBulbFilled,
   IconCirclePlus,
   IconPlayerStopFilled,
   IconSend
@@ -65,7 +67,9 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     availableHostedModels,
     availableLocalModels,
     availableOpenRouterModels,
-    availableDeepSeekModels
+    availableDeepSeekModels,
+    isThinkingEnabled,
+    setIsThinkingEnabled
   } = useContext(ChatbotUIContext)
 
   const {
@@ -265,11 +269,15 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
         </div>
 
         <>
-          <IconCirclePlus
-            className="absolute bottom-[12px] left-3 cursor-pointer p-1 hover:opacity-50"
-            size={32}
-            onClick={() => fileInputRef.current?.click()}
-          />
+          <div className="absolute bottom-[12px] left-3">
+            <div
+              onClick={() => fileInputRef.current?.click()}
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground transition-colors"
+              title={t("Upload file")}
+            >
+              <IconCirclePlus size={24} stroke={1.5} />
+            </div>
+          </div>
 
           {/* Hidden input to select files from device */}
           <Input
@@ -286,7 +294,7 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
 
         <TextareaAutosize
           textareaRef={chatInputRef}
-          className="ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring text-md flex w-full resize-none rounded-md border-none bg-transparent px-14 py-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
+          className="ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring text-md flex w-full resize-none rounded-md border-none bg-transparent pl-14 pr-28 py-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           placeholder={t("Ask anything. Type @  /  #  ! ~")}
           onValueChange={handleInputChange}
           value={userInput}
@@ -298,26 +306,40 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
           onCompositionEnd={() => setIsTyping(false)}
         />
 
-        <div className="absolute bottom-[14px] right-3 cursor-pointer hover:opacity-50">
+        <div className="absolute bottom-[12px] right-3 flex items-center gap-2">
+          <div
+            onClick={() => setIsThinkingEnabled(!isThinkingEnabled)}
+            className={cn(
+              "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full transition-colors hover:bg-accent",
+              isThinkingEnabled ? "text-yellow-500" : "text-muted-foreground hover:text-foreground"
+            )}
+            title={isThinkingEnabled ? t("Disable Deep Thinking") : t("Enable Deep Thinking")}
+          >
+            {isThinkingEnabled ? <IconBulbFilled size={24} /> : <IconBulb size={24} stroke={1.5} />}
+          </div>
+
           {isGenerating ? (
-            <IconPlayerStopFilled
-              className="hover:bg-background animate-pulse rounded bg-transparent p-1"
+            <div
+              className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-destructive text-destructive-foreground hover:opacity-90"
               onClick={handleStopMessage}
-              size={30}
-            />
+              title={t("Stop generating")}
+            >
+              <IconPlayerStopFilled size={18} />
+            </div>
           ) : (
-            <IconSend
+            <div
               className={cn(
-                "bg-primary text-secondary rounded p-1",
+                "flex h-8 w-8 cursor-pointer items-center justify-center rounded-full bg-primary text-primary-foreground transition-opacity hover:opacity-90",
                 !userInput && "cursor-not-allowed opacity-50"
               )}
               onClick={() => {
                 if (!userInput) return
-
                 handleSendMessage(userInput, chatMessages, false)
               }}
-              size={30}
-            />
+              title={t("Send message")}
+            >
+              <IconSend size={18} />
+            </div>
           )}
         </div>
       </div>

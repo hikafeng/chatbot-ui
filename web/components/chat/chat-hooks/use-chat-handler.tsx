@@ -73,7 +73,8 @@ export const useChatHandler = () => {
     isPromptPickerOpen,
     isFilePickerOpen,
     isToolPickerOpen,
-    isMcpPickerOpen
+    isMcpPickerOpen,
+    isThinkingEnabled
   } = useContext(ChatbotUIContext)
 
   const chatInputRef = useRef<HTMLTextAreaElement>(null)
@@ -390,7 +391,8 @@ export const useChatHandler = () => {
             setIsGenerating,
             setFirstTokenReceived,
             setChatMessages,
-            setToolInUse
+            setToolInUse,
+            isThinkingEnabled
           )
         }
       }

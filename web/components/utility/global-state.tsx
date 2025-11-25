@@ -98,11 +98,11 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   // ACTIVE CHAT STORE
   const [isGenerating, setIsGenerating] = useState<boolean>(false)
   const [firstTokenReceived, setFirstTokenReceived] = useState<boolean>(false)
-  const [abortController, setAbortController] =
-    useState<AbortController | null>(null)
+  const [abortController, setAbortController] = useState<AbortController | null>(null)
+  const [isThinkingEnabled, setIsThinkingEnabled] = useState<boolean>(false)
 
   // CHAT INPUT COMMAND STORE
-  const [isPromptPickerOpen, setIsPromptPickerOpen] = useState(false)
+  const [isPromptPickerOpen, setIsPromptPickerOpen] = useState<boolean>(false)
   const [slashCommand, setSlashCommand] = useState("")
   const [isFilePickerOpen, setIsFilePickerOpen] = useState(false)
   const [hashtagCommand, setHashtagCommand] = useState("")
@@ -308,6 +308,8 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setFirstTokenReceived,
         abortController,
         setAbortController,
+        isThinkingEnabled,
+        setIsThinkingEnabled,
 
         // CHAT INPUT COMMAND STORE
         isPromptPickerOpen,

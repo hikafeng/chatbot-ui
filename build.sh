@@ -1,1 +1,0 @@
-docker build -t hikafeng/chatbot-ui:v0.1.1 .

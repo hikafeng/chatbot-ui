@@ -90,6 +90,8 @@ interface ChatbotUIContext {
   setFirstTokenReceived: Dispatch<SetStateAction<boolean>>
   isGenerating: boolean
   setIsGenerating: Dispatch<SetStateAction<boolean>>
+  isThinkingEnabled: boolean
+  setIsThinkingEnabled: Dispatch<SetStateAction<boolean>>
 
   // CHAT INPUT COMMAND STORE
   isPromptPickerOpen: boolean
@@ -232,6 +234,8 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setFirstTokenReceived: () => {},
   abortController: null,
   setAbortController: () => {},
+  isThinkingEnabled: false,
+  setIsThinkingEnabled: () => {},
 
   // CHAT INPUT COMMAND STORE
   isPromptPickerOpen: false,

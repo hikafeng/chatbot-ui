@@ -110,5 +110,10 @@
   "No matching mcps." : "没有匹配的 MCPs。",
   "No matching assistants." : "没有匹配的助手。",
   "No matching files." : "没有匹配的文件。",
-  "No matching prompts." : "没有匹配的提示。"
+  "No matching prompts." : "没有匹配的提示。",
+  "Upload file": "上传文件",
+  "Disable Deep Thinking": "禁用深度思考",
+  "Enable Deep Thinking": "启用深度思考",
+  "Stop generating": "停止生成",
+  "Send message": "发送消息"
 }

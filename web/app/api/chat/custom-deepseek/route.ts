@@ -12,10 +12,11 @@ export const runtime: ServerRuntime = "edge"
 
 export async function POST(request: Request) {
   const json = await request.json()
-  const { chatSettings, messages, customModelId } = json as {
+  const { chatSettings, messages, customModelId, isThinkingEnabled } = json as {
     chatSettings: ChatSettings
     messages: any[]
     customModelId: string
+    isThinkingEnabled: boolean
   }
 
   try {
@@ -42,7 +43,10 @@ export async function POST(request: Request) {
       temperature: chatSettings.temperature,
       max_tokens: chatSettings.contextLength,
       stream: true,
-      response_format: { type: "text" }
+      response_format: { type: "text" },
+      ...(isThinkingEnabled === false
+        ? { chat_template_kwargs: { enable_thinking: false } }
+        : {})
     }
 
     const response = await fetch(apiUrl, {
