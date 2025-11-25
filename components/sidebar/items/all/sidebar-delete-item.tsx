@@ -18,10 +18,11 @@ import { deletePreset } from "@/db/presets"
 import { deletePrompt } from "@/db/prompts"
 import { deleteFileFromStorage } from "@/db/storage/files"
 import { deleteTool } from "@/db/tools"
+import { deleteMcp } from "@/db/mcps"
 import { Tables } from "@/supabase/types"
 import { ContentType, DataItemType } from "@/types"
 import { FC, useContext, useRef, useState } from "react"
-
+import { useTranslation } from "react-i18next"
 interface SidebarDeleteItemProps {
   item: DataItemType
   contentType: ContentType
@@ -31,6 +32,7 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
   item,
   contentType
 }) => {
+  const { t } = useTranslation()
   const {
     setChats,
     setPresets,
@@ -39,6 +41,7 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
     setCollections,
     setAssistants,
     setTools,
+    setMcps,
     setModels
   } = useContext(ChatbotUIContext)
 
@@ -72,6 +75,9 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
     tools: async (tool: Tables<"tools">) => {
       await deleteTool(tool.id)
     },
+    mcps: async (mcp: Tables<"mcps">) => {
+      await deleteMcp(mcp.id)
+    },
     models: async (model: Tables<"models">) => {
       await deleteModel(model.id)
     }
@@ -85,6 +91,7 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
     collections: setCollections,
     assistants: setAssistants,
     tools: setTools,
+    mcps: setMcps,
     models: setModels
   }
 
@@ -114,26 +121,28 @@ export const SidebarDeleteItem: FC<SidebarDeleteItemProps> = ({
     <Dialog open={showDialog} onOpenChange={setShowDialog}>
       <DialogTrigger asChild>
         <Button className="text-red-500" variant="ghost">
-          Delete
+          {t("Delete")}
         </Button>
       </DialogTrigger>
 
       <DialogContent onKeyDown={handleKeyDown}>
         <DialogHeader>
-          <DialogTitle>Delete {contentType.slice(0, -1)}</DialogTitle>
+          <DialogTitle>
+            {t("Delete")} {contentType.slice(0, -1)}
+          </DialogTitle>
 
           <DialogDescription>
-            Are you sure you want to delete {item.name}?
+            {t("Are you sure you want to delete")} {item.name}?
           </DialogDescription>
         </DialogHeader>
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => setShowDialog(false)}>
-            Cancel
+            {t("Cancel")}
           </Button>
 
           <Button ref={buttonRef} variant="destructive" onClick={handleDelete}>
-            Delete
+            {t("Delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

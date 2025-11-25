@@ -2,6 +2,7 @@ import { ChatbotUIContext } from "@/context/context"
 import { getAssistantCollectionsByAssistantId } from "@/db/assistant-collections"
 import { getAssistantFilesByAssistantId } from "@/db/assistant-files"
 import { getAssistantToolsByAssistantId } from "@/db/assistant-tools"
+import { getAssistantMcpsByAssistantId } from "@/db/assistant-mcps"
 import { getCollectionFilesByCollectionId } from "@/db/collection-files"
 import { Tables } from "@/supabase/types"
 import { LLMID } from "@/types"
@@ -22,6 +23,9 @@ export const usePromptAndCommand = () => {
     setToolCommand,
     setIsToolPickerOpen,
     setSelectedTools,
+    setMcpCommand,
+    setIsMcpPickerOpen,
+    setSelectedMcps,
     setAtCommand,
     setIsAssistantPickerOpen,
     setSelectedAssistant,
@@ -34,11 +38,12 @@ export const usePromptAndCommand = () => {
     const slashTextRegex = /\/([^ ]*)$/
     const hashtagTextRegex = /#([^ ]*)$/
     const toolTextRegex = /!([^ ]*)$/
+    const mcpTextRegex = /~([^ ]*)$/
     const atMatch = value.match(atTextRegex)
     const slashMatch = value.match(slashTextRegex)
     const hashtagMatch = value.match(hashtagTextRegex)
     const toolMatch = value.match(toolTextRegex)
-
+    const mcpMatch = value.match(mcpTextRegex)
     if (atMatch) {
       setIsAssistantPickerOpen(true)
       setAtCommand(atMatch[1])
@@ -51,14 +56,19 @@ export const usePromptAndCommand = () => {
     } else if (toolMatch) {
       setIsToolPickerOpen(true)
       setToolCommand(toolMatch[1])
+    } else if (mcpMatch) {
+      setIsMcpPickerOpen(true)
+      setMcpCommand(mcpMatch[1])
     } else {
       setIsPromptPickerOpen(false)
       setIsFilePickerOpen(false)
       setIsToolPickerOpen(false)
+      setIsMcpPickerOpen(false)
       setIsAssistantPickerOpen(false)
       setSlashCommand("")
       setHashtagCommand("")
       setToolCommand("")
+      setMcpCommand("")
       setAtCommand("")
     }
 
@@ -134,6 +144,11 @@ export const usePromptAndCommand = () => {
     setSelectedTools(prev => [...prev, tool])
   }
 
+  const handleSelectMcp = (mcp: Tables<"mcps">) => {
+    setIsMcpPickerOpen(false)
+    setUserInput(userInput.replace(/~[^ ]*$/, ""))
+    setSelectedMcps(prev => [...prev, mcp])
+  }
   const handleSelectAssistant = async (assistant: Tables<"assistants">) => {
     setIsAssistantPickerOpen(false)
     setUserInput(userInput.replace(/@[^ ]*$/, ""))
@@ -165,8 +180,10 @@ export const usePromptAndCommand = () => {
     }
     const assistantTools = (await getAssistantToolsByAssistantId(assistant.id))
       .tools
-
+    const assistantMcps = (await getAssistantMcpsByAssistantId(assistant.id))
+      .mcps
     setSelectedTools(assistantTools)
+    setSelectedMcps(assistantMcps)
     setChatFiles(
       allFiles.map(file => ({
         id: file.id,
@@ -185,6 +202,7 @@ export const usePromptAndCommand = () => {
     handleSelectUserFile,
     handleSelectUserCollection,
     handleSelectTool,
+    handleSelectMcp,
     handleSelectAssistant
   }
 }

@@ -1,14 +1,15 @@
 import { ContentType } from "@/types"
 import {
   IconAdjustmentsHorizontal,
-  IconBolt,
+  IconTools,
   IconBooks,
   IconFile,
   IconMessage,
   IconPencil,
   IconRobotFace,
-  IconSparkles
+  IconBoxModel
 } from "@tabler/icons-react"
+import { MCP } from "@lobehub/icons"
 import { FC } from "react"
 import { TabsList } from "../ui/tabs"
 import { WithTooltip } from "../ui/with-tooltip"
@@ -26,7 +27,7 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
 }) => {
   return (
     <div className="flex flex-col justify-between border-r-2 pb-5">
-      <TabsList className="bg-background grid h-[440px] grid-rows-7">
+      <TabsList className="bg-background mt-4 grid h-[520px] grid-rows-7 gap-4">
         <SidebarSwitchItem
           icon={<IconMessage size={SIDEBAR_ICON_SIZE} />}
           contentType="chats"
@@ -46,7 +47,7 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
         />
 
         <SidebarSwitchItem
-          icon={<IconSparkles size={SIDEBAR_ICON_SIZE} />}
+          icon={<IconBoxModel size={SIDEBAR_ICON_SIZE} />}
           contentType="models"
           onContentTypeChange={onContentTypeChange}
         />
@@ -70,8 +71,14 @@ export const SidebarSwitcher: FC<SidebarSwitcherProps> = ({
         />
 
         <SidebarSwitchItem
-          icon={<IconBolt size={SIDEBAR_ICON_SIZE} />}
+          icon={<IconTools size={SIDEBAR_ICON_SIZE} />}
           contentType="tools"
+          onContentTypeChange={onContentTypeChange}
+        />
+
+        <SidebarSwitchItem
+          icon={<MCP size={SIDEBAR_ICON_SIZE} />}
+          contentType="mcps"
           onContentTypeChange={onContentTypeChange}
         />
       </TabsList>

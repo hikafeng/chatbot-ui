@@ -4,6 +4,7 @@ import { IconRobotFace } from "@tabler/icons-react"
 import Image from "next/image"
 import { FC, useContext, useEffect, useRef } from "react"
 import { usePromptAndCommand } from "./chat-hooks/use-prompt-and-command"
+import { useTranslation } from "react-i18next"
 
 interface AssistantPickerProps {}
 
@@ -70,14 +71,14 @@ export const AssistantPicker: FC<AssistantPickerProps> = ({}) => {
         itemsRef.current[nextIndex]?.focus()
       }
     }
-
+  const { t } = useTranslation("chat")
   return (
     <>
       {isAssistantPickerOpen && (
         <div className="bg-background flex flex-col space-y-1 rounded-xl border-2 p-2 text-sm">
           {filteredAssistants.length === 0 ? (
             <div className="text-md flex h-14 cursor-pointer items-center justify-center italic hover:opacity-50">
-              No matching assistants.
+              {t("No matching assistants.")}
             </div>
           ) : (
             <>

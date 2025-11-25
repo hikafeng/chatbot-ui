@@ -15,7 +15,7 @@ import { Tables } from "@/supabase/types"
 import { FC, useContext, useRef, useState } from "react"
 import { Input } from "../ui/input"
 import { useRouter } from "next/navigation"
-
+import { useTranslation } from "react-i18next"
 interface DeleteWorkspaceProps {
   workspace: Tables<"workspaces">
   onDelete: () => void
@@ -25,6 +25,7 @@ export const DeleteWorkspace: FC<DeleteWorkspaceProps> = ({
   workspace,
   onDelete
 }) => {
+  const { t } = useTranslation()
   const { setWorkspaces, setSelectedWorkspace } = useContext(ChatbotUIContext)
   const { handleNewChat } = useChatHandler()
   const router = useRouter()
@@ -46,7 +47,7 @@ export const DeleteWorkspace: FC<DeleteWorkspaceProps> = ({
       const defaultWorkspace = filteredWorkspaces[0]
 
       setSelectedWorkspace(defaultWorkspace)
-      router.push(`/${defaultWorkspace.id}/chat`)
+      router.push(`/${defaultWorkspace.id}/c`)
 
       return filteredWorkspaces
     })
@@ -66,28 +67,30 @@ export const DeleteWorkspace: FC<DeleteWorkspaceProps> = ({
   return (
     <Dialog open={showWorkspaceDialog} onOpenChange={setShowWorkspaceDialog}>
       <DialogTrigger asChild>
-        <Button variant="destructive">Delete</Button>
+        <Button variant="destructive">{t("Delete")}</Button>
       </DialogTrigger>
 
       <DialogContent onKeyDown={handleKeyDown}>
         <DialogHeader>
-          <DialogTitle>Delete {workspace.name}</DialogTitle>
+          <DialogTitle>
+            {t("Delete")} {workspace.name}
+          </DialogTitle>
 
           <DialogDescription className="space-y-1">
-            WARNING: Deleting a workspace will delete all of its data.
+            {t("WARNING: Deleting a workspace will delete all of its data.")}
           </DialogDescription>
         </DialogHeader>
 
         <Input
           className="mt-4"
-          placeholder="Type the name of this workspace to confirm"
+          placeholder={t("Type the name of this workspace to confirm")}
           value={name}
           onChange={e => setName(e.target.value)}
         />
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => setShowWorkspaceDialog(false)}>
-            Cancel
+            {t("Cancel")}
           </Button>
 
           <Button
@@ -96,7 +99,7 @@ export const DeleteWorkspace: FC<DeleteWorkspaceProps> = ({
             onClick={handleDeleteWorkspace}
             disabled={name !== workspace.name}
           >
-            Delete
+            {t("Delete")}
           </Button>
         </DialogFooter>
       </DialogContent>

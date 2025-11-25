@@ -63,9 +63,9 @@ export const useSelectFileHandler = () => {
           simplifiedFileType = "pdf"
         } else if (
           simplifiedFileType.includes(
-            "vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-              "docx"
-          )
+            "vnd.openxmlformats-officedocument.wordprocessingml.document"
+          ) ||
+          simplifiedFileType.includes("docx")
         ) {
           simplifiedFileType = "docx"
         }
@@ -83,9 +83,9 @@ export const useSelectFileHandler = () => {
         // Handle docx files
         if (
           file.type.includes(
-            "vnd.openxmlformats-officedocument.wordprocessingml.document" ||
-              "docx"
-          )
+            "vnd.openxmlformats-officedocument.wordprocessingml.document"
+          ) ||
+          simplifiedFileType.includes("docx")
         ) {
           const arrayBuffer = await file.arrayBuffer()
           const result = await mammoth.extractRawText({
@@ -184,9 +184,10 @@ export const useSelectFileHandler = () => {
               )
             )
           }
-        } catch (error) {
-          toast.error("Failed to upload.")
-
+        } catch (error: any) {
+          toast.error("Failed to upload. " + error?.message, {
+            duration: 10000
+          })
           setNewMessageImages(prev =>
             prev.filter(img => img.messageId !== "temp")
           )

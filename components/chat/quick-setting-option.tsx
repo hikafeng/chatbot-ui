@@ -2,9 +2,12 @@ import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import { Tables } from "@/supabase/types"
 import { IconCircleCheckFilled, IconRobotFace } from "@tabler/icons-react"
 import Image from "next/image"
-import { FC } from "react"
+// import { FC } from "react"
 import { ModelIcon } from "../models/model-icon"
 import { DropdownMenuItem } from "../ui/dropdown-menu"
+import { FC, useContext, useEffect, useRef, useState } from "react"
+import { ChatbotUIContext } from "@/context/context"
+import { LLM, LLMID, MessageImage, ModelProvider } from "@/types"
 
 interface QuickSettingOptionProps {
   contentType: "presets" | "assistants"
@@ -21,8 +24,44 @@ export const QuickSettingOption: FC<QuickSettingOptionProps> = ({
   onSelect,
   image
 }) => {
-  const modelDetails = LLM_LIST.find(model => model.modelId === item.model)
-
+  const {
+    presets,
+    assistants,
+    selectedAssistant,
+    selectedPreset,
+    chatSettings,
+    setSelectedPreset,
+    setSelectedAssistant,
+    setChatSettings,
+    assistantImages,
+    setChatFiles,
+    setSelectedTools,
+    setSelectedMcps,
+    setShowFilesDisplay,
+    selectedWorkspace,
+    availableLocalModels,
+    availableDeepSeekModels,
+    availableOpenRouterModels,
+    models
+  } = useContext(ChatbotUIContext)
+  // const modelDetails = LLM_LIST.find(model => model.modelId === item.model)
+  let modelDetails = null
+  if (item) {
+    modelDetails = [
+      ...models.map(model => ({
+        modelId: model.model_id as LLMID,
+        modelName: model.name,
+        provider: "custom" as ModelProvider,
+        hostedId: model.id,
+        platformLink: "",
+        imageInput: false
+      })),
+      ...LLM_LIST,
+      ...availableLocalModels,
+      ...availableDeepSeekModels,
+      ...availableOpenRouterModels
+    ].find(model => model.modelId === item.model)
+  }
   return (
     <DropdownMenuItem
       tabIndex={0}
@@ -47,7 +86,7 @@ export const QuickSettingOption: FC<QuickSettingOptionProps> = ({
           />
         ) : (
           <IconRobotFace
-            className="bg-primary text-secondary border-primary rounded border-[1px] p-1"
+            className="bg-primary text-secondary border-primary rounded border-DEFAULT p-1"
             size={32}
           />
         )}

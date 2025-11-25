@@ -2,6 +2,7 @@ import { ChatbotUIContext } from "@/context/context"
 import { getAssistantCollectionsByAssistantId } from "@/db/assistant-collections"
 import { getAssistantFilesByAssistantId } from "@/db/assistant-files"
 import { getAssistantToolsByAssistantId } from "@/db/assistant-tools"
+import { getAssistantMcpsByAssistantId } from "@/db/assistant-mcps"
 import { updateChat } from "@/db/chats"
 import { getCollectionFilesByCollectionId } from "@/db/collection-files"
 import { deleteMessagesIncludingAndAfter } from "@/db/messages"
@@ -21,6 +22,7 @@ import {
   processResponse,
   validateChatSettings
 } from "../chat-helpers"
+import { set } from "zod"
 
 export const useChatHandler = () => {
   const router = useRouter()
@@ -39,8 +41,10 @@ export const useChatHandler = () => {
     setSelectedChat,
     setChats,
     setSelectedTools,
+    setSelectedMcps,
     availableLocalModels,
     availableOpenRouterModels,
+    availableDeepSeekModels,
     abortController,
     setAbortController,
     chatSettings,
@@ -56,26 +60,34 @@ export const useChatHandler = () => {
     chatFileItems,
     setChatFileItems,
     setToolInUse,
+    setMcpInUse,
     useRetrieval,
     sourceCount,
     setIsPromptPickerOpen,
     setIsFilePickerOpen,
     selectedTools,
+    selectedMcps,
     selectedPreset,
     setChatSettings,
     models,
     isPromptPickerOpen,
     isFilePickerOpen,
-    isToolPickerOpen
+    isToolPickerOpen,
+    isMcpPickerOpen
   } = useContext(ChatbotUIContext)
 
   const chatInputRef = useRef<HTMLTextAreaElement>(null)
 
   useEffect(() => {
-    if (!isPromptPickerOpen || !isFilePickerOpen || !isToolPickerOpen) {
+    if (
+      !isPromptPickerOpen ||
+      !isFilePickerOpen ||
+      !isToolPickerOpen ||
+      !isMcpPickerOpen
+    ) {
       chatInputRef.current?.focus()
     }
-  }, [isPromptPickerOpen, isFilePickerOpen, isToolPickerOpen])
+  }, [isPromptPickerOpen, isFilePickerOpen, isToolPickerOpen, isMcpPickerOpen])
 
   const handleNewChat = async () => {
     if (!selectedWorkspace) return
@@ -98,6 +110,9 @@ export const useChatHandler = () => {
 
     setSelectedTools([])
     setToolInUse("none")
+
+    setSelectedMcps([])
+    setMcpInUse("none")
 
     if (selectedAssistant) {
       setChatSettings({
@@ -131,8 +146,11 @@ export const useChatHandler = () => {
       const assistantTools = (
         await getAssistantToolsByAssistantId(selectedAssistant.id)
       ).tools
-
+      const assistantMcps = (
+        await getAssistantMcpsByAssistantId(selectedAssistant.id)
+      ).mcps
       setSelectedTools(assistantTools)
+      setSelectedMcps(assistantMcps)
       setChatFiles(
         allFiles.map(file => ({
           id: file.id,
@@ -175,7 +193,7 @@ export const useChatHandler = () => {
       // })
     }
 
-    return router.push(`/${selectedWorkspace.id}/chat`)
+    return router.push(`/${selectedWorkspace.id}/c`)
   }
 
   const handleFocusChatInput = () => {
@@ -211,11 +229,13 @@ export const useChatHandler = () => {
           modelName: model.name,
           provider: "custom" as ModelProvider,
           hostedId: model.id,
-          platformLink: "",
-          imageInput: false
+          platformLink: model.base_url,
+          imageInput: model.image_input,
+          toolCall: model.tool_call
         })),
         ...LLM_LIST,
         ...availableLocalModels,
+        ...availableDeepSeekModels,
         ...availableOpenRouterModels
       ].find(llm => llm.modelId === chatSettings?.model)
 
@@ -238,7 +258,7 @@ export const useChatHandler = () => {
         useRetrieval
       ) {
         setToolInUse("retrieval")
-
+        setMcpInUse("retrieval")
         retrievedFileItems = await handleRetrieval(
           userInput,
           newMessageFiles,
@@ -258,7 +278,6 @@ export const useChatHandler = () => {
           setChatMessages,
           selectedAssistant
         )
-
       let payload: ChatPayload = {
         chatSettings: chatSettings!,
         workspaceInstructions: selectedWorkspace!.instructions || "",
@@ -271,41 +290,79 @@ export const useChatHandler = () => {
       }
 
       let generatedText = ""
+      if (selectedTools.length > 0 || selectedMcps.length > 0) {
+        if (selectedTools.length > 0) {
+          setToolInUse("Tools")
 
-      if (selectedTools.length > 0) {
-        setToolInUse("Tools")
+          const formattedMessages = await buildFinalMessages(
+            payload,
+            profile!,
+            chatImages
+          )
 
-        const formattedMessages = await buildFinalMessages(
-          payload,
-          profile!,
-          chatImages
-        )
-
-        const response = await fetch("/api/chat/tools", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            chatSettings: payload.chatSettings,
-            messages: formattedMessages,
-            selectedTools
+          const response = await fetch("/api/chat/tools", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              chatSettings: payload.chatSettings,
+              messages: formattedMessages,
+              selectedTools,
+              modelData
+            })
           })
-        })
 
-        setToolInUse("none")
+          setToolInUse("none")
 
-        generatedText = await processResponse(
-          response,
-          isRegeneration
-            ? payload.chatMessages[payload.chatMessages.length - 1]
-            : tempAssistantChatMessage,
-          true,
-          newAbortController,
-          setFirstTokenReceived,
-          setChatMessages,
-          setToolInUse
-        )
+          generatedText = await processResponse(
+            response,
+            isRegeneration
+              ? payload.chatMessages[payload.chatMessages.length - 1]
+              : tempAssistantChatMessage,
+            true,
+            newAbortController,
+            setFirstTokenReceived,
+            setChatMessages,
+            setToolInUse
+          )
+        }
+        if (selectedMcps.length > 0) {
+          setMcpInUse("Mcps")
+
+          const formattedMessages = await buildFinalMessages(
+            payload,
+            profile!,
+            chatImages
+          )
+
+          const response = await fetch("/api/chat/mcps", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              chatSettings: payload.chatSettings,
+              messages: formattedMessages,
+              selectedMcps,
+              modelData
+            })
+          })
+
+          setMcpInUse("none")
+
+          generatedText = await processResponse(
+            response,
+            isRegeneration
+              ? payload.chatMessages[payload.chatMessages.length - 1]
+              : tempAssistantChatMessage,
+            true,
+            newAbortController,
+            setFirstTokenReceived,
+            setChatMessages,
+            setMcpInUse
+          )
+        }
       } else {
         if (modelData!.provider === "ollama") {
           generatedText = await handleLocalChat(
@@ -382,7 +439,6 @@ export const useChatHandler = () => {
 
       setIsGenerating(false)
       setFirstTokenReceived(false)
-      setUserInput("")
     } catch (error) {
       setIsGenerating(false)
       setFirstTokenReceived(false)

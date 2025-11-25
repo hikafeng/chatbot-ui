@@ -11,6 +11,7 @@ import {
 import Image from "next/image"
 import { FC, useContext, useEffect, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { toast } from "sonner"
 import { Input } from "../ui/input"
 import { TextareaAutosize } from "../ui/textarea-autosize"
 import { ChatCommandInput } from "./chat-command-input"
@@ -19,7 +20,7 @@ import { useChatHandler } from "./chat-hooks/use-chat-handler"
 import { useChatHistoryHandler } from "./chat-hooks/use-chat-history"
 import { usePromptAndCommand } from "./chat-hooks/use-prompt-and-command"
 import { useSelectFileHandler } from "./chat-hooks/use-select-file-handler"
-import { toast } from "sonner"
+import { LLMID, ModelProvider } from "@/types"
 
 interface ChatInputProps {}
 
@@ -47,6 +48,9 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     focusTool,
     setFocusTool,
     isToolPickerOpen,
+    focusMcp,
+    setFocusMcp,
+    isMcpPickerOpen,
     isPromptPickerOpen,
     setIsPromptPickerOpen,
     isFilePickerOpen,
@@ -54,7 +58,14 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     chatSettings,
     selectedTools,
     setSelectedTools,
-    assistantImages
+    selectedMcps,
+    setSelectedMcps,
+    assistantImages,
+    models,
+    availableHostedModels,
+    availableLocalModels,
+    availableOpenRouterModels,
+    availableDeepSeekModels
   } = useContext(ChatbotUIContext)
 
   const {
@@ -93,6 +104,7 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
       isPromptPickerOpen ||
       isFilePickerOpen ||
       isToolPickerOpen ||
+      isMcpPickerOpen ||
       isAssistantPickerOpen
     ) {
       if (
@@ -105,6 +117,7 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
         if (isPromptPickerOpen) setFocusPrompt(!focusPrompt)
         if (isFilePickerOpen) setFocusFile(!focusFile)
         if (isToolPickerOpen) setFocusTool(!focusTool)
+        if (isMcpPickerOpen) setFocusMcp(!focusMcp)
         if (isAssistantPickerOpen) setFocusAssistant(!focusAssistant)
       }
     }
@@ -145,11 +158,27 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
     const imagesAllowed = LLM_LIST.find(
       llm => llm.modelId === chatSettings?.model
     )?.imageInput
-
+    const allModels = [
+      ...models.map(model => ({
+        modelId: model.model_id as LLMID,
+        modelName: model.name,
+        provider: "custom" as ModelProvider,
+        hostedId: model.id,
+        platformLink: "",
+        imageInput: model.image_input
+      })),
+      ...availableHostedModels,
+      ...availableLocalModels,
+      ...availableDeepSeekModels,
+      ...availableOpenRouterModels
+    ]
+    const imagesAllowedAllmodel = allModels.find(
+      llm => llm.modelId === chatSettings?.model
+    )?.imageInput
     const items = event.clipboardData.items
     for (const item of items) {
       if (item.type.indexOf("image") === 0) {
-        if (!imagesAllowed) {
+        if (!imagesAllowed && !imagesAllowedAllmodel) {
           toast.error(
             `Images are not supported for this model. Use models like GPT-4 Vision instead.`
           )
@@ -184,6 +213,25 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
                 <IconBolt size={20} />
 
                 <div>{tool.name}</div>
+              </div>
+            </div>
+          ))}
+
+        {selectedMcps &&
+          selectedMcps.map((mcp, index) => (
+            <div
+              key={index}
+              className="flex justify-center"
+              onClick={() =>
+                setSelectedMcps(
+                  selectedMcps.filter(selectedMcp => selectedMcp.id !== mcp.id)
+                )
+              }
+            >
+              <div className="flex cursor-pointer items-center justify-center space-x-1 rounded-lg bg-purple-600 px-3 py-1 hover:opacity-50">
+                <IconBolt size={20} />
+
+                <div>{mcp.name}</div>
               </div>
             </div>
           ))}
@@ -239,9 +287,7 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
         <TextareaAutosize
           textareaRef={chatInputRef}
           className="ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring text-md flex w-full resize-none rounded-md border-none bg-transparent px-14 py-2 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-          placeholder={t(
-            `Ask anything. Type "@" for assistants, "/" for prompts, "#" for files, and "!" for tools.`
-          )}
+          placeholder={t("Ask anything. Type @  /  #  ! ~")}
           onValueChange={handleInputChange}
           value={userInput}
           minRows={1}
@@ -274,6 +320,11 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
             />
           )}
         </div>
+      </div>
+      <div className="px-13 py-3  text-center text-xs opacity-50 disabled:opacity-50">
+        {t(
+          "The LLM's response may contain errors. Please verify all important information."
+        )}
       </div>
     </>
   )

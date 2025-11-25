@@ -26,6 +26,11 @@ import {
   getAssistantToolsByAssistantId
 } from "@/db/assistant-tools"
 import {
+  createAssistantMcp,
+  deleteAssistantMcp,
+  getAssistantMcpsByAssistantId
+} from "@/db/assistant-mcps"
+import {
   createAssistantWorkspaces,
   deleteAssistantWorkspace,
   getAssistantWorkspacesByAssistantId,
@@ -77,6 +82,12 @@ import {
   getToolWorkspacesByToolId,
   updateTool
 } from "@/db/tools"
+import {
+  createMcpWorkspaces,
+  deleteMcpWorkspace,
+  getMcpWorkspacesByMcpId,
+  updateMcp
+} from "@/db/mcps"
 import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import { Tables, TablesUpdate } from "@/supabase/types"
 import { CollectionFile, ContentType, DataItemType } from "@/types"
@@ -84,6 +95,7 @@ import { FC, useContext, useEffect, useRef, useState } from "react"
 import profile from "react-syntax-highlighter/dist/esm/languages/hljs/profile"
 import { toast } from "sonner"
 import { SidebarDeleteItem } from "./sidebar-delete-item"
+import { start } from "repl"
 
 interface SidebarUpdateItemProps {
   isTyping: boolean
@@ -112,6 +124,7 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     setCollections,
     setAssistants,
     setTools,
+    setMcps,
     setModels,
     setAssistantImages
   } = useContext(ChatbotUIContext)
@@ -143,6 +156,9 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
   const [startingAssistantTools, setStartingAssistantTools] = useState<
     Tables<"tools">[]
   >([])
+  const [startingAssistantMcps, setStartingAssistantMcps] = useState<
+    Tables<"mcps">[]
+  >([])
   const [selectedAssistantFiles, setSelectedAssistantFiles] = useState<
     Tables<"files">[]
   >([])
@@ -151,7 +167,9 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
   const [selectedAssistantTools, setSelectedAssistantTools] = useState<
     Tables<"tools">[]
   >([])
-
+  const [selectedAssistantMcps, setSelectedAssistantMcps] = useState<
+    Tables<"mcps">[]
+  >([])
   useEffect(() => {
     if (isOpen) {
       const fetchData = async () => {
@@ -188,6 +206,8 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
       setStartingAssistantCollections,
       startingAssistantTools,
       setStartingAssistantTools,
+      startingAssistantMcps,
+      setStartingAssistantMcps,
       selectedAssistantFiles,
       setSelectedAssistantFiles,
       selectedAssistantCollections,
@@ -196,6 +216,7 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
       setSelectedAssistantTools
     },
     tools: null,
+    mcps: null,
     models: null
   }
 
@@ -221,11 +242,16 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
       const assistantTools = await getAssistantToolsByAssistantId(assistantId)
       setStartingAssistantTools(assistantTools.tools)
 
+      const assistantMcps = await getAssistantMcpsByAssistantId(assistantId)
+      setStartingAssistantMcps(assistantMcps.mcps)
+
       setSelectedAssistantFiles([])
       setSelectedAssistantCollections([])
       setSelectedAssistantTools([])
+      setSelectedAssistantMcps([])
     },
     tools: null,
+    mcps: null,
     models: null
   }
 
@@ -253,6 +279,10 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     },
     tools: async (toolId: string) => {
       const item = await getToolWorkspacesByToolId(toolId)
+      return item.workspaces
+    },
+    mcps: async (mcpId: string) => {
+      const item = await getMcpWorkspacesByMcpId(mcpId)
       return item.workspaces
     },
     models: async (modelId: string) => {
@@ -502,6 +532,30 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
         await deleteAssistantTool(assistantId, tool.id)
       }
 
+      const mcpsToAdd = selectedAssistantMcps.filter(
+        selectedMcp =>
+          !startingAssistantMcps.some(
+            startingMcp => startingMcp.id === selectedMcp.id
+          )
+      )
+
+      const mcpsToRemove = startingAssistantMcps.filter(startingMcp =>
+        selectedAssistantMcps.some(
+          selectedMcp => selectedMcp.id === startingMcp.id
+        )
+      )
+
+      for (const mcp of mcpsToAdd) {
+        await createAssistantMcp({
+          user_id: item.user_id,
+          assistant_id: assistantId,
+          mcp_id: mcp.id
+        })
+      }
+
+      for (const mcp of mcpsToRemove) {
+        await deleteAssistantMcp(assistantId, mcp.id)
+      }
       let updatedAssistant = await updateAssistant(assistantId, rest)
 
       if (image) {
@@ -555,6 +609,20 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
 
       return updatedTool
     },
+    mcps: async (mcpId: string, updateState: TablesUpdate<"mcps">) => {
+      const updatedMcp = await updateMcp(mcpId, updateState)
+
+      await handleWorkspaceUpdates(
+        startingWorkspaces,
+        selectedWorkspaces,
+        mcpId,
+        deleteMcpWorkspace,
+        createMcpWorkspaces as any,
+        "mcp_id"
+      )
+
+      return updatedMcp
+    },
     models: async (modelId: string, updateState: TablesUpdate<"models">) => {
       const updatedModel = await updateModel(modelId, updateState)
 
@@ -579,6 +647,7 @@ export const SidebarUpdateItem: FC<SidebarUpdateItemProps> = ({
     collections: setCollections,
     assistants: setAssistants,
     tools: setTools,
+    mcps: setMcps,
     models: setModels
   }
 

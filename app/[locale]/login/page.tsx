@@ -2,6 +2,8 @@ import { Brand } from "@/components/ui/brand"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SubmitButton } from "@/components/ui/submit-button"
+import { SignInButton } from "@/components/ui/signin-button"
+import { SignUpButton } from "@/components/ui/signup-button"
 import { createClient } from "@/lib/supabase/server"
 import { Database } from "@/supabase/types"
 import { createServerClient } from "@supabase/ssr"
@@ -9,6 +11,9 @@ import { get } from "@vercel/edge-config"
 import { Metadata } from "next"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
+import ResetPassword from "@/components/ui/resetpassword"
+import { getEnvVarOrEdgeConfigValue } from "@/utils/getEnvVarOrEdgeConfigValue"
+import { SUPABASE_SERVER_URL, SUPABASE_ANON_KEY } from "@/config"
 
 export const metadata: Metadata = {
   title: "Login"
@@ -21,8 +26,8 @@ export default async function Login({
 }) {
   const cookieStore = cookies()
   const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    SUPABASE_SERVER_URL!,
+    SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
@@ -45,7 +50,7 @@ export default async function Login({
       throw new Error(error.message)
     }
 
-    return redirect(`/${homeWorkspace.id}/chat`)
+    return redirect(`/${homeWorkspace.id}/c`)
   }
 
   const signIn = async (formData: FormData) => {
@@ -78,16 +83,7 @@ export default async function Login({
       )
     }
 
-    return redirect(`/${homeWorkspace.id}/chat`)
-  }
-
-  const getEnvVarOrEdgeConfigValue = async (name: string) => {
-    "use server"
-    if (process.env.EDGE_CONFIG) {
-      return await get<string>(name)
-    }
-
-    return process.env[name]
+    return redirect(`/${homeWorkspace.id}/c`)
   }
 
   const signUp = async (formData: FormData) => {
@@ -136,10 +132,10 @@ export default async function Login({
       return redirect(`/login?message=${error.message}`)
     }
 
-    return redirect("/setup")
+    // return redirect("/setup")
 
     // USE IF YOU WANT TO SEND EMAIL VERIFICATION, ALSO CHANGE TOML FILE
-    // return redirect("/login?message=Check email to continue sign in process")
+    return redirect("/login?message=Check email to continue sign in process")
   }
 
   const handleResetPassword = async (formData: FormData) => {
@@ -169,38 +165,31 @@ export default async function Login({
       >
         <Brand />
 
-        <Label className="text-md mt-4" htmlFor="email">
-          Email
-        </Label>
+        <Label className="text-md mt-4" htmlFor="email" i18nKey="Email" />
         <Input
           className="mb-3 rounded-md border bg-inherit px-4 py-2"
+          id="email"
           name="email"
           placeholder="you@example.com"
           required
         />
 
-        <Label className="text-md" htmlFor="password">
-          Password
-        </Label>
+        <Label className="text-md" htmlFor="password" i18nKey="Password" />
         <Input
           className="mb-6 rounded-md border bg-inherit px-4 py-2"
+          id="password"
           type="password"
           name="password"
           placeholder="••••••••"
         />
 
-        <SubmitButton className="mb-2 rounded-md bg-blue-700 px-4 py-2 text-white">
-          Login
-        </SubmitButton>
+        <SignInButton className="mb-2 rounded-md bg-blue-700 px-4 py-2 text-white"></SignInButton>
 
-        <SubmitButton
+        <SignUpButton
           formAction={signUp}
           className="border-foreground/20 mb-2 rounded-md border px-4 py-2"
-        >
-          Sign Up
-        </SubmitButton>
-
-        <div className="text-muted-foreground mt-1 flex justify-center text-sm">
+        ></SignUpButton>
+        {/* <div className="text-muted-foreground mt-1 flex justify-center text-sm">
           <span className="mr-1">Forgot your password?</span>
           <button
             formAction={handleResetPassword}
@@ -208,8 +197,8 @@ export default async function Login({
           >
             Reset
           </button>
-        </div>
-
+        </div> */}
+        <ResetPassword handleResetPassword={handleResetPassword} />
         {searchParams?.message && (
           <p className="bg-foreground/10 text-foreground mt-4 p-4 text-center">
             {searchParams.message}

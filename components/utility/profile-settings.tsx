@@ -8,11 +8,14 @@ import {
 import { updateProfile } from "@/db/profile"
 import { uploadProfileImage } from "@/db/storage/profile-images"
 import { exportLocalStorageAsJSON } from "@/lib/export-old-data"
-import { fetchOpenRouterModels } from "@/lib/models/fetch-models"
+import {
+  fetchOpenRouterModels,
+  fetchDeepSeekModels
+} from "@/lib/models/fetch-models"
 import { LLM_LIST_MAP } from "@/lib/models/llm/llm-list"
 import { supabase } from "@/lib/supabase/browser-client"
 import { cn } from "@/lib/utils"
-import { OpenRouterLLM } from "@/types"
+import { OpenRouterLLM, DeepSeekLLM } from "@/types"
 import {
   IconCircleCheckFilled,
   IconCircleXFilled,
@@ -23,13 +26,27 @@ import {
 } from "@tabler/icons-react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { FC, useCallback, useContext, useRef, useState } from "react"
+// import { FC, useCallback, useContext, useRef, useState } from "react"
+// import React, { useEffect, useState } from 'react';
+import React, {
+  FC,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState
+} from "react"
 import { toast } from "sonner"
 import { SIDEBAR_ICON_SIZE } from "../sidebar/sidebar-switcher"
 import { Button } from "../ui/button"
 import ImagePicker from "../ui/image-picker"
 import { Input } from "../ui/input"
 import { Label } from "../ui/label"
+import { BalanceCNY } from "../ui/balanceCNY"
+import { BalanceUSD } from "../ui/balanceUSD"
+
+import { useTranslation } from "react-i18next"
+
 import { LimitDisplay } from "../ui/limit-display"
 import {
   Sheet,
@@ -42,6 +59,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { TextareaAutosize } from "../ui/textarea-autosize"
 import { WithTooltip } from "../ui/with-tooltip"
 import { ThemeSwitcher } from "./theme-switcher"
+import { deleteAllChats } from "@/db/chats"
+import { useChatHandler } from "../chat/chat-hooks/use-chat-handler"
+import { DeleteAllChats } from "../sidebar/items/chat/delete-all-chats"
 
 interface ProfileSettingsProps {}
 
@@ -52,10 +72,18 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
     envKeyMap,
     setAvailableHostedModels,
     setAvailableOpenRouterModels,
-    availableOpenRouterModels
+    setAvailableDeepSeekModels,
+    availableOpenRouterModels,
+    availableDeepSeekModels,
+    setChats,
+    setChatMessages,
+    setSelectedChat
   } = useContext(ChatbotUIContext)
 
   const router = useRouter()
+  const { t } = useTranslation()
+
+  const { handleNewChat } = useChatHandler()
 
   const buttonRef = useRef<HTMLButtonElement>(null)
 
@@ -118,6 +146,97 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
     profile?.openrouter_api_key || ""
   )
 
+  const [deepseekAPIKey, setDeepseekAPIKey] = useState(
+    profile?.deepseek_api_key || ""
+  )
+  const [openrouterkeyUsage, setopenrouterKeyUsage] = useState({
+    limit: 0,
+    usage: 0,
+    limit_remaining: 0
+  })
+
+  const [deepseekkeyUsage, setdeepseekKeyUsage] = useState({
+    total: 0,
+    granted: 0,
+    topped_up: 0
+  })
+
+  useEffect(() => {
+    const openrouterApiKeyToUse =
+      openrouterAPIKey || profile?.openrouter_api_key
+    const fetchOpenrouterKeyUsage = async () => {
+      if (!openrouterApiKeyToUse || openrouterApiKeyToUse.length !== 73) return
+      try {
+        const response = await fetch("https://openrouter.ai/api/v1/auth/key", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${openrouterApiKeyToUse}`
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        // console.log(data)
+        if (data && data.data) {
+          setopenrouterKeyUsage({
+            limit: parseFloat(data.data.limit.toFixed(2)),
+            usage: parseFloat(data.data.usage.toFixed(2)),
+            limit_remaining: parseFloat(
+              (data.data.limit - data.data.usage).toFixed(2)
+            )
+          })
+        }
+      } catch (error) {
+        console.error("Failed to fetch key usage:", error)
+      }
+    }
+
+    fetchOpenrouterKeyUsage()
+  }, [openrouterAPIKey, profile?.openrouter_api_key])
+
+  useEffect(() => {
+    const deepseekApiKeyToUse = deepseekAPIKey || profile?.deepseek_api_key
+    const fetchDeepseekKeyUsage = async () => {
+      if (!deepseekApiKeyToUse || deepseekApiKeyToUse.length !== 35) return
+      try {
+        const response = await fetch("https://api.deepseek.com/user/balance", {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${deepseekApiKeyToUse}`
+          }
+        })
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`)
+        }
+
+        const data = await response.json()
+        // console.log(data)
+
+        if (data && data.balance_infos && data.is_available) {
+          setdeepseekKeyUsage({
+            total: parseFloat(
+              parseFloat(data.balance_infos[0].total_balance).toFixed(2)
+            ),
+            granted: parseFloat(
+              parseFloat(data.balance_infos[0].granted_balance).toFixed(2)
+            ),
+            topped_up: parseFloat(
+              parseFloat(data.balance_infos[0].topped_up_balance).toFixed(2)
+            )
+          })
+        }
+      } catch (error) {
+        console.error("Failed to fetch key usage:", error)
+      }
+    }
+
+    fetchDeepseekKeyUsage()
+  }, [deepseekAPIKey, profile?.deepseek_api_key])
+
   const handleSignOut = async () => {
     await supabase.auth.signOut()
     router.push("/login")
@@ -157,7 +276,8 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
       azure_openai_45_turbo_id: azureOpenai45TurboID,
       azure_openai_45_vision_id: azureOpenai45VisionID,
       azure_openai_embeddings_id: azureEmbeddingsID,
-      openrouter_api_key: openrouterAPIKey
+      openrouter_api_key: openrouterAPIKey,
+      deepseek_api_key: deepseekAPIKey
     })
 
     setProfile(updatedProfile)
@@ -172,7 +292,8 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
       "mistral",
       "groq",
       "perplexity",
-      "openrouter"
+      "openrouter",
+      "deepseek"
     ]
 
     providers.forEach(async provider => {
@@ -191,20 +312,37 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
 
       if (!envKeyActive) {
         const hasApiKey = !!updatedProfile[providerKey]
-
-        if (provider === "openrouter") {
-          if (hasApiKey && availableOpenRouterModels.length === 0) {
-            const openrouterModels: OpenRouterLLM[] =
-              await fetchOpenRouterModels()
-            setAvailableOpenRouterModels(prev => {
-              const newModels = openrouterModels.filter(
-                model =>
-                  !prev.some(prevModel => prevModel.modelId === model.modelId)
+        if (provider === "deepseek" || provider === "openrouter") {
+          if (provider === "deepseek") {
+            if (hasApiKey && availableDeepSeekModels.length === 0) {
+              const deepseekModels: DeepSeekLLM[] = await fetchDeepSeekModels(
+                profile.deepseek_api_key
               )
-              return [...prev, ...newModels]
-            })
-          } else {
-            setAvailableOpenRouterModels([])
+              setAvailableDeepSeekModels(prev => {
+                const newModels = deepseekModels.filter(
+                  model =>
+                    !prev.some(prevModel => prevModel.modelId === model.modelId)
+                )
+                return [...prev, ...newModels]
+              })
+            } else {
+              setAvailableDeepSeekModels([])
+            }
+          }
+          if (provider === "openrouter") {
+            if (hasApiKey && availableOpenRouterModels.length === 0) {
+              const openrouterModels: OpenRouterLLM[] =
+                await fetchOpenRouterModels(profile["openrouter_api_key"])
+              setAvailableOpenRouterModels(prev => {
+                const newModels = openrouterModels.filter(
+                  model =>
+                    !prev.some(prevModel => prevModel.modelId === model.modelId)
+                )
+                return [...prev, ...newModels]
+              })
+            } else {
+              setAvailableOpenRouterModels([])
+            }
           }
         } else {
           if (hasApiKey && Array.isArray(models)) {
@@ -258,7 +396,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
       const usernameRegex = /^[a-zA-Z0-9_]+$/
       if (!usernameRegex.test(username)) {
         setUsernameAvailable(false)
-        alert(
+        toast.error(
           "Username must be letters, numbers, or underscores only - no other characters or spacing allowed."
         )
         return
@@ -319,7 +457,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
         <div className="grow overflow-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center justify-between space-x-2">
-              <div>User Settings</div>
+              <div>{t("User Settings")}</div>
 
               <Button
                 tabIndex={-1}
@@ -328,21 +466,21 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
                 onClick={handleSignOut}
               >
                 <IconLogout className="mr-1" size={20} />
-                Logout
+                {t("Logout")}
               </Button>
             </SheetTitle>
           </SheetHeader>
 
-          <Tabs defaultValue="profile">
+          <Tabs defaultValue="keys">
             <TabsList className="mt-4 grid w-full grid-cols-2">
-              <TabsTrigger value="profile">Profile</TabsTrigger>
-              <TabsTrigger value="keys">API Keys</TabsTrigger>
+              <TabsTrigger value="profile">{t("Profile")}</TabsTrigger>
+              <TabsTrigger value="keys">{t("API Keys")}</TabsTrigger>
             </TabsList>
 
             <TabsContent className="mt-4 space-y-4" value="profile">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2">
-                  <Label>Username</Label>
+                  <Label>{t("Username")}</Label>
 
                   <div className="text-xs">
                     {username !== profile.username ? (
@@ -388,7 +526,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
               </div>
 
               <div className="space-y-1">
-                <Label>Profile Image</Label>
+                <Label>{t("Profile Image")}</Label>
 
                 <ImagePicker
                   src={profileImageSrc}
@@ -401,7 +539,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
               </div>
 
               <div className="space-y-1">
-                <Label>Chat Display Name</Label>
+                <Label>{t("Chat Display Name")}</Label>
 
                 <Input
                   placeholder="Chat display name..."
@@ -413,14 +551,15 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
 
               <div className="space-y-1">
                 <Label className="text-sm">
-                  What would you like the AI to know about you to provide better
-                  responses?
+                  {t(
+                    "What would you like the AI to know about you to provide better responses?"
+                  )}
                 </Label>
 
                 <TextareaAutosize
                   value={profileInstructions}
                   onValueChange={setProfileInstructions}
-                  placeholder="Profile context... (optional)"
+                  placeholder={t("Profile context... (optional)")}
                   minRows={6}
                   maxRows={10}
                 />
@@ -433,15 +572,75 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
             </TabsContent>
 
             <TabsContent className="mt-4 space-y-4" value="keys">
+              <div className="space-y-1">
+                {envKeyMap["openrouter"] ? (
+                  <Label>OpenRouter API key set by admin.</Label>
+                ) : (
+                  <>
+                    <Label>OpenRouter</Label>
+                    <div
+                      style={{
+                        marginLeft: "0.5rem",
+                        marginRight: "1rem",
+                        marginTop: "0.5rem",
+                        marginBottom: "0.5rem"
+                      }}
+                    >
+                      <BalanceUSD
+                        limit={openrouterkeyUsage.limit}
+                        usage={openrouterkeyUsage.usage}
+                        limit_remaining={openrouterkeyUsage.limit_remaining}
+                      />
+                    </div>
+                    <Input
+                      placeholder="OpenRouter API Key"
+                      type="password"
+                      value={openrouterAPIKey}
+                      onChange={e => setOpenrouterAPIKey(e.target.value)}
+                    />
+                  </>
+                )}
+              </div>
+
+              <div className="space-y-1">
+                {envKeyMap["deepseek"] ? (
+                  <Label>Deepseek API key set by admin.</Label>
+                ) : (
+                  <>
+                    <Label>Deepseek</Label>
+                    <div
+                      style={{
+                        marginLeft: "0.5rem",
+                        marginRight: "1rem",
+                        marginTop: "0.5rem",
+                        marginBottom: "0.5rem"
+                      }}
+                    >
+                      <BalanceCNY
+                        total={deepseekkeyUsage.total}
+                        granted={deepseekkeyUsage.granted}
+                        topped_up={deepseekkeyUsage.topped_up}
+                      />
+                    </div>
+                    <Input
+                      placeholder="Deepseek API Key"
+                      type="password"
+                      value={deepseekAPIKey}
+                      onChange={e => setDeepseekAPIKey(e.target.value)}
+                    />
+                  </>
+                )}
+              </div>
+
               <div className="mt-5 space-y-2">
                 <Label className="flex items-center">
                   {useAzureOpenai
                     ? envKeyMap["azure"]
                       ? ""
-                      : "Azure OpenAI API Key"
+                      : "Azure OpenAI"
                     : envKeyMap["openai"]
                       ? ""
-                      : "OpenAI API Key"}
+                      : "OpenAI"}
 
                   <Button
                     className={cn(
@@ -633,7 +832,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
                   <Label>Anthropic API key set by admin.</Label>
                 ) : (
                   <>
-                    <Label>Anthropic API Key</Label>
+                    <Label>Anthropic</Label>
                     <Input
                       placeholder="Anthropic API Key"
                       type="password"
@@ -649,7 +848,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
                   <Label>Google Gemini API key set by admin.</Label>
                 ) : (
                   <>
-                    <Label>Google Gemini API Key</Label>
+                    <Label>Google Gemini</Label>
                     <Input
                       placeholder="Google Gemini API Key"
                       type="password"
@@ -665,7 +864,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
                   <Label>Mistral API key set by admin.</Label>
                 ) : (
                   <>
-                    <Label>Mistral API Key</Label>
+                    <Label>Mistral</Label>
                     <Input
                       placeholder="Mistral API Key"
                       type="password"
@@ -681,7 +880,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
                   <Label>Groq API key set by admin.</Label>
                 ) : (
                   <>
-                    <Label>Groq API Key</Label>
+                    <Label>Groq</Label>
                     <Input
                       placeholder="Groq API Key"
                       type="password"
@@ -697,28 +896,12 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
                   <Label>Perplexity API key set by admin.</Label>
                 ) : (
                   <>
-                    <Label>Perplexity API Key</Label>
+                    <Label>Perplexity</Label>
                     <Input
                       placeholder="Perplexity API Key"
                       type="password"
                       value={perplexityAPIKey}
                       onChange={e => setPerplexityAPIKey(e.target.value)}
-                    />
-                  </>
-                )}
-              </div>
-
-              <div className="space-y-1">
-                {envKeyMap["openrouter"] ? (
-                  <Label>OpenRouter API key set by admin.</Label>
-                ) : (
-                  <>
-                    <Label>OpenRouter API Key</Label>
-                    <Input
-                      placeholder="OpenRouter API Key"
-                      type="password"
-                      value={openrouterAPIKey}
-                      onChange={e => setOpenrouterAPIKey(e.target.value)}
                     />
                   </>
                 )}
@@ -733,9 +916,7 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
 
             <WithTooltip
               display={
-                <div>
-                  Download Chatbot UI 1.0 data as JSON. Import coming soon!
-                </div>
+                <div>{t("Export data as JSON. Import coming soon!")}</div>
               }
               trigger={
                 <IconFileDownload
@@ -745,15 +926,24 @@ export const ProfileSettings: FC<ProfileSettingsProps> = ({}) => {
                 />
               }
             />
+
+            <WithTooltip
+              display={
+                <div>
+                  {t("Delete all chats. This action cannot be undone!")}
+                </div>
+              }
+              trigger={<DeleteAllChats profile={profile} />}
+            />
           </div>
 
           <div className="ml-auto space-x-2">
             <Button variant="ghost" onClick={() => setIsOpen(false)}>
-              Cancel
+              {t("Cancel")}
             </Button>
 
             <Button ref={buttonRef} onClick={handleSave}>
-              Save
+              {t("Save")}
             </Button>
           </div>
         </div>

@@ -10,6 +10,7 @@ import { ChatbotUIContext } from "@/context/context"
 import { createAssistantCollections } from "@/db/assistant-collections"
 import { createAssistantFiles } from "@/db/assistant-files"
 import { createAssistantTools } from "@/db/assistant-tools"
+import { createAssistantMcps } from "@/db/assistant-mcps"
 import { createAssistant, updateAssistant } from "@/db/assistants"
 import { createChat } from "@/db/chats"
 import { createCollectionFiles } from "@/db/collection-files"
@@ -23,6 +24,7 @@ import {
   uploadAssistantImage
 } from "@/db/storage/assistant-images"
 import { createTool } from "@/db/tools"
+import { createMcp } from "@/db/mcps"
 import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import { Tables, TablesInsert } from "@/supabase/types"
 import { ContentType } from "@/types"
@@ -56,6 +58,7 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
     setAssistants,
     setAssistantImages,
     setTools,
+    setMcps,
     setModels
   } = useContext(ChatbotUIContext)
 
@@ -110,10 +113,11 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
         files: Tables<"files">[]
         collections: Tables<"collections">[]
         tools: Tables<"tools">[]
+        mcps: Tables<"mcps">[]
       } & Tables<"assistants">,
       workspaceId: string
     ) => {
-      const { image, files, collections, tools, ...rest } = createState
+      const { image, files, collections, tools, mcps, ...rest } = createState
 
       const createdAssistant = await createAssistant(rest, workspaceId)
 
@@ -163,13 +167,21 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
         tool_id: tool.id
       }))
 
+      const assistantMcps = mcps.map(mcp => ({
+        user_id: rest.user_id,
+        assistant_id: createdAssistant.id,
+        mcp_id: mcp.id
+      }))
+
       await createAssistantFiles(assistantFiles)
       await createAssistantCollections(assistantCollections)
       await createAssistantTools(assistantTools)
+      await createAssistantMcps(assistantMcps)
 
       return updatedAssistant
     },
     tools: createTool,
+    mcps: createMcp,
     models: createModel
   }
 
@@ -181,6 +193,7 @@ export const SidebarCreateItem: FC<SidebarCreateItemProps> = ({
     collections: setCollections,
     assistants: setAssistants,
     tools: setTools,
+    mcps: setMcps,
     models: setModels
   }
 

@@ -6,6 +6,7 @@ import {
   LLM,
   MessageImage,
   OpenRouterLLM,
+  DeepSeekLLM,
   WorkspaceImage
 } from "@/types"
 import { AssistantImage } from "@/types/images/assistant-image"
@@ -36,6 +37,8 @@ interface ChatbotUIContext {
   setPrompts: Dispatch<SetStateAction<Tables<"prompts">[]>>
   tools: Tables<"tools">[]
   setTools: Dispatch<SetStateAction<Tables<"tools">[]>>
+  mcps: Tables<"mcps">[]
+  setMcps: Dispatch<SetStateAction<Tables<"mcps">[]>>
   workspaces: Tables<"workspaces">[]
   setWorkspaces: Dispatch<SetStateAction<Tables<"workspaces">[]>>
 
@@ -48,7 +51,8 @@ interface ChatbotUIContext {
   setAvailableLocalModels: Dispatch<SetStateAction<LLM[]>>
   availableOpenRouterModels: OpenRouterLLM[]
   setAvailableOpenRouterModels: Dispatch<SetStateAction<OpenRouterLLM[]>>
-
+  availableDeepSeekModels: DeepSeekLLM[]
+  setAvailableDeepSeekModels: Dispatch<SetStateAction<DeepSeekLLM[]>>
   // WORKSPACE STORE
   selectedWorkspace: Tables<"workspaces"> | null
   setSelectedWorkspace: Dispatch<SetStateAction<Tables<"workspaces"> | null>>
@@ -100,12 +104,18 @@ interface ChatbotUIContext {
   setIsToolPickerOpen: Dispatch<SetStateAction<boolean>>
   toolCommand: string
   setToolCommand: Dispatch<SetStateAction<string>>
+  isMcpPickerOpen: boolean
+  setIsMcpPickerOpen: Dispatch<SetStateAction<boolean>>
+  mcpCommand: string
+  setMcpCommand: Dispatch<SetStateAction<string>>
   focusPrompt: boolean
   setFocusPrompt: Dispatch<SetStateAction<boolean>>
   focusFile: boolean
   setFocusFile: Dispatch<SetStateAction<boolean>>
   focusTool: boolean
   setFocusTool: Dispatch<SetStateAction<boolean>>
+  focusMcp: boolean
+  setFocusMcp: Dispatch<SetStateAction<boolean>>
   focusAssistant: boolean
   setFocusAssistant: Dispatch<SetStateAction<boolean>>
   atCommand: string
@@ -136,6 +146,12 @@ interface ChatbotUIContext {
   setSelectedTools: Dispatch<SetStateAction<Tables<"tools">[]>>
   toolInUse: string
   setToolInUse: Dispatch<SetStateAction<string>>
+
+  // MCP STORE
+  selectedMcps: Tables<"mcps">[]
+  setSelectedMcps: Dispatch<SetStateAction<Tables<"mcps">[]>>
+  mcpInuse: string
+  setMcpInUse: Dispatch<SetStateAction<string>>
 }
 
 export const ChatbotUIContext = createContext<ChatbotUIContext>({
@@ -162,6 +178,8 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setPrompts: () => {},
   tools: [],
   setTools: () => {},
+  mcps: [],
+  setMcps: () => {},
   workspaces: [],
   setWorkspaces: () => {},
 
@@ -174,6 +192,8 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setAvailableLocalModels: () => {},
   availableOpenRouterModels: [],
   setAvailableOpenRouterModels: () => {},
+  availableDeepSeekModels: [],
+  setAvailableDeepSeekModels: () => {},
 
   // WORKSPACE STORE
   selectedWorkspace: null,
@@ -226,12 +246,18 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   setIsToolPickerOpen: () => {},
   toolCommand: "",
   setToolCommand: () => {},
+  isMcpPickerOpen: false,
+  setIsMcpPickerOpen: () => {},
+  mcpCommand: "",
+  setMcpCommand: () => {},
   focusPrompt: false,
   setFocusPrompt: () => {},
   focusFile: false,
   setFocusFile: () => {},
   focusTool: false,
   setFocusTool: () => {},
+  focusMcp: false,
+  setFocusMcp: () => {},
   focusAssistant: false,
   setFocusAssistant: () => {},
   atCommand: "",
@@ -261,5 +287,11 @@ export const ChatbotUIContext = createContext<ChatbotUIContext>({
   selectedTools: [],
   setSelectedTools: () => {},
   toolInUse: "none",
-  setToolInUse: () => {}
+  setToolInUse: () => {},
+
+  // MCP STORE
+  selectedMcps: [],
+  setSelectedMcps: () => {},
+  mcpInuse: "none",
+  setMcpInUse: () => {}
 })

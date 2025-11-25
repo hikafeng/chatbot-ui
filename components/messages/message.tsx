@@ -53,6 +53,7 @@ export const Message: FC<MessageProps> = ({
     firstTokenReceived,
     availableLocalModels,
     availableOpenRouterModels,
+    availableDeepSeekModels,
     chatMessages,
     selectedAssistant,
     chatImages,
@@ -137,6 +138,7 @@ export const Message: FC<MessageProps> = ({
     })),
     ...LLM_LIST,
     ...availableLocalModels,
+    ...availableDeepSeekModels,
     ...availableOpenRouterModels
   ].find(llm => llm.modelId === message.model) as LLM
 
@@ -148,7 +150,7 @@ export const Message: FC<MessageProps> = ({
     image => image.path === selectedAssistant?.image_path
   )?.base64
 
-  const modelDetails = LLM_LIST.find(model => model.modelId === message.model)
+  // const modelDetails = LLM_LIST.find(model => model.modelId === message.model)
 
   const fileAccumulator: Record<
     string,
@@ -189,8 +191,8 @@ export const Message: FC<MessageProps> = ({
       onMouseLeave={() => setIsHovering(false)}
       onKeyDown={handleKeyDown}
     >
-      <div className="relative flex w-[300px] flex-col py-6 sm:w-[400px] md:w-[500px] lg:w-[600px] xl:w-[700px]">
-        <div className="absolute right-0 top-7">
+      <div className="3xl:w-[1280px] 4xl:w-[1920px] 5xl:w-[2560px] relative flex w-full flex-col p-6 sm:w-[550px] sm:px-0 md:w-[650px] lg:w-[700px] xl:w-[800px] 2xl:w-[960px] ">
+        <div className="absolute right-5 top-7 sm:right-0">
           <MessageActions
             onCopy={handleCopy}
             onEdit={handleStartEdit}
@@ -205,7 +207,7 @@ export const Message: FC<MessageProps> = ({
           {message.role === "system" ? (
             <div className="flex items-center space-x-4">
               <IconPencil
-                className="border-primary bg-primary text-secondary rounded border-[1px] p-1"
+                className="border-primary bg-primary text-secondary rounded border-DEFAULT p-1"
                 size={ICON_SIZE}
               />
 
@@ -231,7 +233,7 @@ export const Message: FC<MessageProps> = ({
                     display={<div>{MODEL_DATA?.modelName}</div>}
                     trigger={
                       <ModelIcon
-                        provider={modelDetails?.provider || "custom"}
+                        provider={MODEL_DATA?.provider || "custom"}
                         height={ICON_SIZE}
                         width={ICON_SIZE}
                       />
@@ -248,7 +250,7 @@ export const Message: FC<MessageProps> = ({
                 />
               ) : (
                 <IconMoodSmile
-                  className="bg-primary text-secondary border-primary rounded border-[1px] p-1"
+                  className="bg-primary text-secondary border-primary rounded border-DEFAULT p-1"
                   size={ICON_SIZE}
                 />
               )}

@@ -7,6 +7,7 @@ import { updateModel } from "@/db/models"
 import { updatePreset } from "@/db/presets"
 import { updatePrompt } from "@/db/prompts"
 import { updateTool } from "@/db/tools"
+import { updateMcp } from "@/db/mcps"
 import { cn } from "@/lib/utils"
 import { Tables } from "@/supabase/types"
 import { ContentType, DataItemType, DataListType } from "@/types"
@@ -21,6 +22,8 @@ import { ModelItem } from "./items/models/model-item"
 import { PresetItem } from "./items/presets/preset-item"
 import { PromptItem } from "./items/prompts/prompt-item"
 import { ToolItem } from "./items/tools/tool-item"
+import { McpItem } from "./items/mcps/mcp-item"
+import { useTranslation } from "react-i18next"
 
 interface SidebarDataListProps {
   contentType: ContentType
@@ -41,6 +44,7 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     setCollections,
     setAssistants,
     setTools,
+    setMcps,
     setModels
   } = useContext(ChatbotUIContext)
 
@@ -85,6 +89,9 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
       case "tools":
         return <ToolItem key={item.id} tool={item as Tables<"tools">} />
 
+      case "mcps":
+        return <McpItem key={item.id} mcp={item as Tables<"mcps">} />
+
       case "models":
         return <ModelItem key={item.id} model={item as Tables<"models">} />
 
@@ -92,6 +99,7 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
         return null
     }
   }
+  const { t } = useTranslation()
 
   const getSortedData = (
     data: any,
@@ -140,6 +148,7 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     collections: updateCollection,
     assistants: updateAssistant,
     tools: updateTool,
+    mcps: updateMcp,
     models: updateModel
   }
 
@@ -151,6 +160,7 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
     collections: setCollections,
     assistants: setAssistants,
     tools: setTools,
+    mcps: setMcps,
     models: setModels
   }
 
@@ -227,7 +237,7 @@ export const SidebarDataList: FC<SidebarDataListProps> = ({
         {data.length === 0 && (
           <div className="flex grow flex-col items-center justify-center">
             <div className=" text-centertext-muted-foreground p-8 text-lg italic">
-              No {contentType}.
+              {t("No")} {t(contentType)}.
             </div>
           </div>
         )}

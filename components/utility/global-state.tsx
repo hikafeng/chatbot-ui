@@ -10,7 +10,8 @@ import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import {
   fetchHostedModels,
   fetchOllamaModels,
-  fetchOpenRouterModels
+  fetchOpenRouterModels,
+  fetchDeepSeekModels
 } from "@/lib/models/fetch-models"
 import { supabase } from "@/lib/supabase/browser-client"
 import { Tables } from "@/supabase/types"
@@ -21,16 +22,19 @@ import {
   LLM,
   MessageImage,
   OpenRouterLLM,
+  DeepSeekLLM,
   WorkspaceImage
 } from "@/types"
 import { AssistantImage } from "@/types/images/assistant-image"
 import { VALID_ENV_KEYS } from "@/types/valid-keys"
 import { useRouter } from "next/navigation"
-import { FC, useEffect, useState } from "react"
+import { FC, useEffect, useState, useCallback } from "react"
 
 interface GlobalStateProps {
   children: React.ReactNode
 }
+
+import { OLLAMA_URL, OLLAMA_API_KEY } from "@/config"
 
 export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   const router = useRouter()
@@ -48,6 +52,7 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   const [presets, setPresets] = useState<Tables<"presets">[]>([])
   const [prompts, setPrompts] = useState<Tables<"prompts">[]>([])
   const [tools, setTools] = useState<Tables<"tools">[]>([])
+  const [mcps, setMcps] = useState<Tables<"mcps">[]>([])
   const [workspaces, setWorkspaces] = useState<Tables<"workspaces">[]>([])
 
   // MODELS STORE
@@ -57,7 +62,9 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   const [availableOpenRouterModels, setAvailableOpenRouterModels] = useState<
     OpenRouterLLM[]
   >([])
-
+  const [availableDeepSeekModels, setAvailableDeepSeekModels] = useState<
+    DeepSeekLLM[]
+  >([])
   // WORKSPACE STORE
   const [selectedWorkspace, setSelectedWorkspace] =
     useState<Tables<"workspaces"> | null>(null)
@@ -100,10 +107,14 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   const [isFilePickerOpen, setIsFilePickerOpen] = useState(false)
   const [hashtagCommand, setHashtagCommand] = useState("")
   const [isToolPickerOpen, setIsToolPickerOpen] = useState(false)
+  const [isMcpPickerOpen, setIsMcpPickerOpen] = useState(false)
   const [toolCommand, setToolCommand] = useState("")
+  const [mcpCommand, setMcpCommand] = useState("")
+
   const [focusPrompt, setFocusPrompt] = useState(false)
   const [focusFile, setFocusFile] = useState(false)
   const [focusTool, setFocusTool] = useState(false)
+  const [focusMcp, setFocusMcp] = useState(false)
   const [focusAssistant, setFocusAssistant] = useState(false)
   const [atCommand, setAtCommand] = useState("")
   const [isAssistantPickerOpen, setIsAssistantPickerOpen] = useState(false)
@@ -123,36 +134,11 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
   const [selectedTools, setSelectedTools] = useState<Tables<"tools">[]>([])
   const [toolInUse, setToolInUse] = useState<string>("none")
 
-  useEffect(() => {
-    ;(async () => {
-      const profile = await fetchStartingData()
+  // MCP STORE
+  const [selectedMcps, setSelectedMcps] = useState<Tables<"mcps">[]>([])
+  const [mcpInuse, setMcpInUse] = useState<string>("none")
 
-      if (profile) {
-        const hostedModelRes = await fetchHostedModels(profile)
-        if (!hostedModelRes) return
-
-        setEnvKeyMap(hostedModelRes.envKeyMap)
-        setAvailableHostedModels(hostedModelRes.hostedModels)
-
-        if (
-          profile["openrouter_api_key"] ||
-          hostedModelRes.envKeyMap["openrouter"]
-        ) {
-          const openRouterModels = await fetchOpenRouterModels()
-          if (!openRouterModels) return
-          setAvailableOpenRouterModels(openRouterModels)
-        }
-      }
-
-      if (process.env.NEXT_PUBLIC_OLLAMA_URL) {
-        const localModels = await fetchOllamaModels()
-        if (!localModels) return
-        setAvailableLocalModels(localModels)
-      }
-    })()
-  }, [])
-
-  const fetchStartingData = async () => {
+  const fetchStartingData = useCallback(async () => {
     const session = (await supabase.auth.getSession()).data.session
 
     if (session) {
@@ -195,8 +181,54 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
 
       return profile
     }
-  }
+  }, [router])
+  useEffect(() => {
+    ;(async () => {
+      const profile = await fetchStartingData()
 
+      if (profile) {
+        const hostedModelRes = await fetchHostedModels(profile)
+        if (!hostedModelRes) return
+
+        setEnvKeyMap(hostedModelRes.envKeyMap)
+        setAvailableHostedModels(hostedModelRes.hostedModels)
+        if (
+          profile["deepseek_api_key"] ||
+          hostedModelRes.envKeyMap["deepseek"]
+        ) {
+          let deepSeekModels
+          if (profile["deepseek_api_key"]) {
+            deepSeekModels = await fetchDeepSeekModels(
+              profile["deepseek_api_key"]
+            )
+          } else {
+            deepSeekModels = await fetchDeepSeekModels(
+              hostedModelRes.envKeyMap["deepseek"]
+            )
+          }
+
+          if (!deepSeekModels) return
+          setAvailableDeepSeekModels(deepSeekModels)
+        }
+        if (
+          profile["openrouter_api_key"] ||
+          hostedModelRes.envKeyMap["openrouter"]
+        ) {
+          const openRouterModels = await fetchOpenRouterModels(
+            profile["openrouter_api_key"]
+          )
+          if (!openRouterModels) return
+          setAvailableOpenRouterModels(openRouterModels)
+        }
+      }
+
+      if (OLLAMA_URL) {
+        const localModels = await fetchOllamaModels()
+        if (!localModels) return
+        setAvailableLocalModels(localModels)
+      }
+    })()
+  }, [fetchStartingData]) // 将 fetchStartingData 添加到依赖数组中
   return (
     <ChatbotUIContext.Provider
       value={{
@@ -223,6 +255,8 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setPrompts,
         tools,
         setTools,
+        mcps,
+        setMcps,
         workspaces,
         setWorkspaces,
 
@@ -235,7 +269,8 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setAvailableLocalModels,
         availableOpenRouterModels,
         setAvailableOpenRouterModels,
-
+        availableDeepSeekModels,
+        setAvailableDeepSeekModels,
         // WORKSPACE STORE
         selectedWorkspace,
         setSelectedWorkspace,
@@ -287,12 +322,18 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         setIsToolPickerOpen,
         toolCommand,
         setToolCommand,
+        isMcpPickerOpen,
+        setIsMcpPickerOpen,
+        mcpCommand,
+        setMcpCommand,
         focusPrompt,
         setFocusPrompt,
         focusFile,
         setFocusFile,
         focusTool,
         setFocusTool,
+        focusMcp,
+        setFocusMcp,
         focusAssistant,
         setFocusAssistant,
         atCommand,
@@ -322,7 +363,13 @@ export const GlobalState: FC<GlobalStateProps> = ({ children }) => {
         selectedTools,
         setSelectedTools,
         toolInUse,
-        setToolInUse
+        setToolInUse,
+
+        // MCP STORE
+        selectedMcps,
+        setSelectedMcps,
+        mcpInuse,
+        setMcpInUse
       }}
     >
       {children}

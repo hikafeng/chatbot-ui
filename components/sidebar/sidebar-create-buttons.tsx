@@ -12,6 +12,8 @@ import { CreateModel } from "./items/models/create-model"
 import { CreatePreset } from "./items/presets/create-preset"
 import { CreatePrompt } from "./items/prompts/create-prompt"
 import { CreateTool } from "./items/tools/create-tool"
+import { CreateMcp } from "./items/mcps/create-mcp"
+import { useTranslation } from "react-i18next"
 
 interface SidebarCreateButtonsProps {
   contentType: ContentType
@@ -25,6 +27,7 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
   const { profile, selectedWorkspace, folders, setFolders } =
     useContext(ChatbotUIContext)
   const { handleNewChat } = useChatHandler()
+  const { t } = useTranslation()
 
   const [isCreatingPrompt, setIsCreatingPrompt] = useState(false)
   const [isCreatingPreset, setIsCreatingPreset] = useState(false)
@@ -32,6 +35,7 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
   const [isCreatingCollection, setIsCreatingCollection] = useState(false)
   const [isCreatingAssistant, setIsCreatingAssistant] = useState(false)
   const [isCreatingTool, setIsCreatingTool] = useState(false)
+  const [isCreatingMcp, setIsCreatingMcp] = useState(false)
   const [isCreatingModel, setIsCreatingModel] = useState(false)
 
   const handleCreateFolder = async () => {
@@ -85,6 +89,11 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
           setIsCreatingTool(true)
         }
 
+      case "mcps":
+        return async () => {
+          setIsCreatingMcp(true)
+        }
+
       case "models":
         return async () => {
           setIsCreatingModel(true)
@@ -99,7 +108,7 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
     <div className="flex w-full space-x-2">
       <Button className="flex h-[36px] grow" onClick={getCreateFunction()}>
         <IconPlus className="mr-1" size={20} />
-        New{" "}
+        {t("New")}{" "}
         {contentType.charAt(0).toUpperCase() +
           contentType.slice(1, contentType.length - 1)}
       </Button>
@@ -145,7 +154,9 @@ export const SidebarCreateButtons: FC<SidebarCreateButtonsProps> = ({
       {isCreatingTool && (
         <CreateTool isOpen={isCreatingTool} onOpenChange={setIsCreatingTool} />
       )}
-
+      {isCreatingMcp && (
+        <CreateMcp isOpen={isCreatingMcp} onOpenChange={setIsCreatingMcp} />
+      )}
       {isCreatingModel && (
         <CreateModel
           isOpen={isCreatingModel}

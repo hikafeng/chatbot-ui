@@ -12,6 +12,7 @@ import profile from "react-syntax-highlighter/dist/esm/languages/hljs/profile"
 import { SidebarItem } from "../all/sidebar-display-item"
 import { AssistantRetrievalSelect } from "./assistant-retrieval-select"
 import { AssistantToolSelect } from "./assistant-tool-select"
+import { AssistantMcpSelect } from "./assistant-mcp-select"
 
 interface AssistantItemProps {
   assistant: Tables<"assistants">
@@ -99,7 +100,24 @@ export const AssistantItem: FC<AssistantItemProps> = ({ assistant }) => {
       }
     })
   }
+  const handleMcpSelect = (
+    mcp: Tables<"mcps">,
+    setSelectedAssistantMcps: React.Dispatch<
+      React.SetStateAction<Tables<"mcps">[]>
+    >
+  ) => {
+    setSelectedAssistantMcps(prevState => {
+      const isMcpAlreadySelected = prevState.find(
+        selectedMcp => selectedMcp.id === mcp.id
+      )
 
+      if (isMcpAlreadySelected) {
+        return prevState.filter(selectedMcp => selectedMcp.id !== mcp.id)
+      } else {
+        return [...prevState, mcp]
+      }
+    })
+  }
   if (!profile) return null
   if (!selectedWorkspace) return null
 
@@ -120,7 +138,7 @@ export const AssistantItem: FC<AssistantItemProps> = ({ assistant }) => {
           />
         ) : (
           <IconRobotFace
-            className="bg-primary text-secondary border-primary rounded border-[1px] p-1"
+            className="bg-primary text-secondary border-primary rounded border-DEFAULT p-1"
             size={30}
           />
         )
@@ -163,6 +181,14 @@ export const AssistantItem: FC<AssistantItemProps> = ({ assistant }) => {
         selectedAssistantTools: Tables<"tools">[]
         setSelectedAssistantTools: React.Dispatch<
           React.SetStateAction<Tables<"tools">[]>
+        >
+        startingAssistantMcps: Tables<"mcps">[]
+        setStartingAssistantMcps: React.Dispatch<
+          React.SetStateAction<Tables<"mcps">[]>
+        >
+        selectedAssistantMcps: Tables<"mcps">[]
+        setSelectedAssistantMcps: React.Dispatch<
+          React.SetStateAction<Tables<"mcps">[]>
         >
       }) => (
         <>
@@ -269,7 +295,7 @@ export const AssistantItem: FC<AssistantItemProps> = ({ assistant }) => {
             />
           </div>
 
-          <div className="space-y-1">
+          <div className="space-y-1 pt-2">
             <Label>Tools</Label>
 
             <AssistantToolSelect
@@ -293,6 +319,34 @@ export const AssistantItem: FC<AssistantItemProps> = ({ assistant }) => {
               }
               onAssistantToolsSelect={tool =>
                 handleToolSelect(tool, renderState.setSelectedAssistantTools)
+              }
+            />
+          </div>
+
+          <div className="space-y-1">
+            <Label>Mcps</Label>
+
+            <AssistantMcpSelect
+              selectedAssistantMcps={
+                renderState.selectedAssistantMcps.length === 0
+                  ? renderState.startingAssistantMcps
+                  : [
+                      ...renderState.startingAssistantMcps.filter(
+                        startingMcp =>
+                          !renderState.selectedAssistantMcps.some(
+                            selectedMcp => selectedMcp.id === startingMcp.id
+                          )
+                      ),
+                      ...renderState.selectedAssistantMcps.filter(
+                        selectedMcp =>
+                          !renderState.startingAssistantMcps.some(
+                            startingMcp => startingMcp.id === selectedMcp.id
+                          )
+                      )
+                    ]
+              }
+              onAssistantMcpsSelect={mcp =>
+                handleMcpSelect(mcp, renderState.setSelectedAssistantMcps)
               }
             />
           </div>

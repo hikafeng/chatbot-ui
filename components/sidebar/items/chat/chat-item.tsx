@@ -22,7 +22,8 @@ export const ChatItem: FC<ChatItemProps> = ({ chat }) => {
     selectedChat,
     availableLocalModels,
     assistantImages,
-    availableOpenRouterModels
+    availableOpenRouterModels,
+    availableDeepSeekModels
   } = useContext(ChatbotUIContext)
 
   const router = useRouter()
@@ -33,7 +34,7 @@ export const ChatItem: FC<ChatItemProps> = ({ chat }) => {
 
   const handleClick = () => {
     if (!selectedWorkspace) return
-    return router.push(`/${selectedWorkspace.id}/chat/${chat.id}`)
+    return router.push(`/${selectedWorkspace.id}/c/${chat.id}`)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -46,6 +47,7 @@ export const ChatItem: FC<ChatItemProps> = ({ chat }) => {
   const MODEL_DATA = [
     ...LLM_LIST,
     ...availableLocalModels,
+    ...availableDeepSeekModels,
     ...availableOpenRouterModels
   ].find(llm => llm.modelId === chat.model) as LLM
 
@@ -76,7 +78,7 @@ export const ChatItem: FC<ChatItemProps> = ({ chat }) => {
           />
         ) : (
           <IconRobotFace
-            className="bg-primary text-secondary border-primary rounded border-[1px] p-1"
+            className="bg-primary text-secondary border-primary rounded border-DEFAULT p-1"
             size={30}
           />
         )

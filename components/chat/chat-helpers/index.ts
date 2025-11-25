@@ -7,7 +7,7 @@ import { createMessages, updateMessage } from "@/db/messages"
 import { uploadMessageImage } from "@/db/storage/message-images"
 import {
   buildFinalMessages,
-  buildGoogleGeminiFinalMessages
+  adaptMessagesForGoogleGemini
 } from "@/lib/build-prompt"
 import { consumeReadableStream } from "@/lib/consume-stream"
 import { Tables, TablesInsert } from "@/supabase/types"
@@ -19,10 +19,12 @@ import {
   LLM,
   MessageImage
 } from "@/types"
+import { headers } from "next/headers"
 import React from "react"
 import { toast } from "sonner"
 import { v4 as uuidv4 } from "uuid"
 
+import { OLLAMA_URL, OLLAMA_API_KEY } from "@/config"
 export const validateChatSettings = (
   chatSettings: ChatSettings | null,
   modelData: LLM | undefined,
@@ -157,10 +159,13 @@ export const handleLocalChat = async (
   setToolInUse: React.Dispatch<React.SetStateAction<string>>
 ) => {
   const formattedMessages = await buildFinalMessages(payload, profile, [])
-
+  console.log("formattedMessages", formattedMessages)
   // Ollama API: https://github.com/jmorganca/ollama/blob/main/docs/api.md
-  const response = await fetchChatResponse(
-    process.env.NEXT_PUBLIC_OLLAMA_URL + "/api/chat",
+  var myHeaders = new Headers()
+  const OLLAMA_AUTH_TOKEN = OLLAMA_API_KEY
+  myHeaders.append("Authorization", `Bearer ${OLLAMA_AUTH_TOKEN}`)
+  const response = await fetchChatTokenResponse(
+    OLLAMA_URL + "/api/chat",
     {
       model: chatSettings.model,
       messages: formattedMessages,
@@ -168,6 +173,7 @@ export const handleLocalChat = async (
         temperature: payload.chatSettings.temperature
       }
     },
+    myHeaders,
     false,
     newAbortController,
     setIsGenerating,
@@ -206,20 +212,24 @@ export const handleHostedChat = async (
       ? "azure"
       : modelData.provider
 
-  let formattedMessages = []
+  let draftMessages = await buildFinalMessages(payload, profile, chatImages)
 
+  let formattedMessages: any[] = []
   if (provider === "google") {
-    formattedMessages = await buildGoogleGeminiFinalMessages(
+    formattedMessages = await adaptMessagesForGoogleGemini(
       payload,
-      profile,
-      newMessageImages
+      draftMessages
     )
   } else {
-    formattedMessages = await buildFinalMessages(payload, profile, chatImages)
+    formattedMessages = draftMessages
   }
 
   const apiEndpoint =
-    provider === "custom" ? "/api/chat/custom" : `/api/chat/${provider}`
+    provider === "custom"
+      ? /deepseek/i.test(modelData.modelName)
+        ? "/api/chat/custom-deepseek"
+        : "/api/chat/custom"
+      : `/api/chat/${provider}`
 
   const requestBody = {
     chatSettings: payload.chatSettings,
@@ -227,28 +237,103 @@ export const handleHostedChat = async (
     customModelId: provider === "custom" ? modelData.hostedId : ""
   }
 
-  const response = await fetchChatResponse(
-    apiEndpoint,
-    requestBody,
-    true,
-    newAbortController,
-    setIsGenerating,
-    setChatMessages
-  )
-
-  return await processResponse(
-    response,
-    isRegeneration
-      ? payload.chatMessages[payload.chatMessages.length - 1]
-      : tempAssistantChatMessage,
-    true,
-    newAbortController,
-    setFirstTokenReceived,
-    setChatMessages,
-    setToolInUse
-  )
+  if (provider === "deepseek") {
+    const response = await fetchChatResponse(
+      apiEndpoint,
+      requestBody,
+      true,
+      newAbortController,
+      setIsGenerating,
+      setChatMessages
+    )
+    return await processDeepSeekResponse(
+      response,
+      isRegeneration
+        ? payload.chatMessages[payload.chatMessages.length - 1]
+        : tempAssistantChatMessage,
+      true,
+      newAbortController,
+      setFirstTokenReceived,
+      setChatMessages,
+      setToolInUse
+    )
+  } else {
+    if (provider === "custom" || /deepseek/i.test(modelData.modelName)) {
+      const response = await fetchChatResponse(
+        apiEndpoint,
+        requestBody,
+        true,
+        newAbortController,
+        setIsGenerating,
+        setChatMessages
+      )
+      return await processDeepSeekResponse(
+        response,
+        isRegeneration
+          ? payload.chatMessages[payload.chatMessages.length - 1]
+          : tempAssistantChatMessage,
+        true,
+        newAbortController,
+        setFirstTokenReceived,
+        setChatMessages,
+        setToolInUse
+      )
+    } else {
+      const response = await fetchChatResponse(
+        apiEndpoint,
+        requestBody,
+        true,
+        newAbortController,
+        setIsGenerating,
+        setChatMessages
+      )
+      return await processResponse(
+        response,
+        isRegeneration
+          ? payload.chatMessages[payload.chatMessages.length - 1]
+          : tempAssistantChatMessage,
+        true,
+        newAbortController,
+        setFirstTokenReceived,
+        setChatMessages,
+        setToolInUse
+      )
+    }
+  }
 }
+export const fetchChatTokenResponse = async (
+  url: string,
+  body: object,
+  headers: Headers,
+  isHosted: boolean,
+  controller: AbortController,
+  setIsGenerating: React.Dispatch<React.SetStateAction<boolean>>,
+  setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>
+) => {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: headers,
+    body: JSON.stringify(body),
+    signal: controller.signal
+  })
 
+  if (!response.ok) {
+    if (response.status === 404 && !isHosted) {
+      toast.error(
+        "Model not found. Make sure you have it downloaded via Ollama."
+      )
+    }
+
+    const errorData = await response.json()
+
+    toast.error(errorData.message)
+
+    setIsGenerating(false)
+    setChatMessages(prevMessages => prevMessages.slice(0, -2))
+  }
+
+  return response
+}
 export const fetchChatResponse = async (
   url: string,
   body: object,
@@ -280,7 +365,6 @@ export const fetchChatResponse = async (
 
   return response
 }
-
 export const processResponse = async (
   response: Response,
   lastChatMessage: ChatMessage,
@@ -292,6 +376,7 @@ export const processResponse = async (
 ) => {
   let fullText = ""
   let contentToAdd = ""
+  let incompleteLine = "" // 用于存储未处理的行
 
   if (response.body) {
     await consumeReadableStream(
@@ -301,19 +386,31 @@ export const processResponse = async (
         setToolInUse("none")
 
         try {
-          contentToAdd = isHosted
-            ? chunk
-            : // Ollama's streaming endpoint returns new-line separated JSON
-              // objects. A chunk may have more than one of these objects, so we
-              // need to split the chunk by new-lines and handle each one
-              // separately.
-              chunk
-                .trimEnd()
-                .split("\n")
-                .reduce(
-                  (acc, line) => acc + JSON.parse(line).message.content,
-                  ""
-                )
+          let currentLine = "",
+            contentToAdd = isHosted
+              ? chunk
+              : chunk
+                  .trimEnd()
+                  .split("\n")
+                  .reduce((acc, line) => {
+                    // 将当前行与之前未处理的行结合起来
+                    currentLine = incompleteLine + line
+
+                    try {
+                      currentLine = incompleteLine + line
+                      const parsedLine = JSON.parse(currentLine)
+                      // // console.log("parsedLine", parsedLine)
+                      // 解析成功,则清空incompleteLine
+                      incompleteLine = ""
+                      return acc + parsedLine.message.content
+                    } catch (error) {
+                      // 解析失败,检查是否是因为不完整的JSON
+                      // console.log("incompleteLine", incompleteLine)
+                      incompleteLine = currentLine
+                      console.debug("currentLine", currentLine)
+                      return acc
+                    }
+                  }, "")
           fullText += contentToAdd
         } catch (error) {
           console.error("Error parsing JSON:", error)
@@ -325,7 +422,7 @@ export const processResponse = async (
               const updatedChatMessage: ChatMessage = {
                 message: {
                   ...chatMessage.message,
-                  content: chatMessage.message.content + contentToAdd
+                  content: fullText
                 },
                 fileItems: chatMessage.fileItems
               }
@@ -345,7 +442,95 @@ export const processResponse = async (
     throw new Error("Response body is null")
   }
 }
+export const processDeepSeekResponse = async (
+  response: Response,
+  lastChatMessage: ChatMessage,
+  isHosted: boolean,
+  controller: AbortController,
+  setFirstTokenReceived: React.Dispatch<React.SetStateAction<boolean>>,
+  setChatMessages: React.Dispatch<React.SetStateAction<ChatMessage[]>>,
+  setToolInUse: React.Dispatch<React.SetStateAction<string>>
+) => {
+  let fullText = ""
+  let reasoningText = "" // 存储完整的 reasoning_content
+  let contentText = "" // 存储 content
+  let reasoningEnded = false // 标记 reasoning_content 是否已经变为 null
 
+  // console.log("Starting to process DeepSeek response...");
+
+  if (response.body) {
+    await consumeReadableStream(
+      response.body,
+      chunk => {
+        setFirstTokenReceived(true)
+        setToolInUse("none")
+
+        // console.log("Received chunk:", chunk);
+
+        let lines = chunk.trimEnd().split("\n")
+
+        for (let line of lines) {
+          line = line.trim()
+          if (!line) continue // 跳过空行
+
+          try {
+            const parsedLine = JSON.parse(line)
+            // console.log("Parsed JSON:", parsedLine);
+
+            if ("reasoning_content" in parsedLine) {
+              const reasoningContent = parsedLine.reasoning_content
+              if (!reasoningEnded) {
+                if (reasoningContent !== "content is null") {
+                  reasoningText += reasoningContent
+                  // console.log("Accumulating reasoning_content:", reasoningText);
+                } else {
+                  reasoningEnded = true // 一旦遇到 null，停止累积 reasoning_content
+                  // console.log("Reasoning content ended.");
+                }
+              }
+            }
+
+            if ("content" in parsedLine) {
+              contentText += parsedLine.content
+              // console.log("Accumulating content:", contentText);
+            }
+          } catch (error) {
+            console.warn("Skipping invalid JSON line:", line)
+          }
+        }
+
+        // 组合最终输出格式
+        fullText =
+          (reasoningText ? `<think>\n${reasoningText}\n</think>\n\n` : "") +
+          contentText
+
+        // console.log("Updated fullText:", fullText);
+
+        setChatMessages(prev =>
+          prev.map(chatMessage => {
+            if (chatMessage.message.id === lastChatMessage.message.id) {
+              return {
+                ...chatMessage,
+                message: {
+                  ...chatMessage.message,
+                  content: fullText
+                }
+              }
+            }
+            return chatMessage
+          })
+        )
+      },
+      controller.signal
+    )
+
+    // console.log("Final fullText:", fullText);
+    return fullText
+  } else {
+    console.error("Response body is null")
+    throw new Error("Response body is null")
+  }
+}
 export const handleCreateChat = async (
   chatSettings: ChatSettings,
   profile: Tables<"profiles">,

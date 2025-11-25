@@ -7,6 +7,10 @@ import { LLM_LIST } from "@/lib/models/llm/llm-list"
 import { Tables } from "@/supabase/types"
 import { FC, useState } from "react"
 import { SidebarItem } from "../all/sidebar-display-item"
+import { useContext, useEffect, useRef } from "react"
+import { ChatbotUIContext } from "@/context/context"
+import { ChatMessage, ChatPayload, LLMID, ModelProvider } from "@/types"
+import { LLM } from "@/types"
 
 interface PresetItemProps {
   preset: Tables<"presets">
@@ -24,9 +28,66 @@ export const PresetItem: FC<PresetItemProps> = ({ preset }) => {
     includeProfileContext: preset.include_profile_context,
     includeWorkspaceInstructions: preset.include_workspace_instructions
   })
-
-  const modelDetails = LLM_LIST.find(model => model.modelId === preset.model)
-
+  const {
+    userInput,
+    chatFiles,
+    setUserInput,
+    setNewMessageImages,
+    profile,
+    setIsGenerating,
+    setChatMessages,
+    setFirstTokenReceived,
+    selectedChat,
+    selectedWorkspace,
+    setSelectedChat,
+    setChats,
+    setSelectedTools,
+    setSelectedMcps,
+    availableLocalModels,
+    availableOpenRouterModels,
+    availableDeepSeekModels,
+    abortController,
+    setAbortController,
+    chatSettings,
+    newMessageImages,
+    selectedAssistant,
+    chatMessages,
+    chatImages,
+    setChatImages,
+    setChatFiles,
+    setNewMessageFiles,
+    setShowFilesDisplay,
+    newMessageFiles,
+    chatFileItems,
+    setChatFileItems,
+    setToolInUse,
+    useRetrieval,
+    sourceCount,
+    setIsPromptPickerOpen,
+    setIsFilePickerOpen,
+    selectedTools,
+    selectedPreset,
+    setChatSettings,
+    models,
+    isPromptPickerOpen,
+    isFilePickerOpen,
+    isToolPickerOpen
+  } = useContext(ChatbotUIContext)
+  // const modelDetails = LLM_LIST.find(model => model.modelId === preset.model)
+  const MODEL_DATA = [
+    ...models.map(model => ({
+      modelId: model.model_id as LLMID,
+      modelName: model.name,
+      provider: "custom" as ModelProvider,
+      hostedId: model.id,
+      platformLink: "",
+      imageInput: false
+    })),
+    ...LLM_LIST,
+    ...availableLocalModels,
+    ...availableDeepSeekModels,
+    ...availableOpenRouterModels
+  ].find(llm => llm.modelId === preset.model) as LLM
   return (
     <SidebarItem
       item={preset}
@@ -34,7 +95,7 @@ export const PresetItem: FC<PresetItemProps> = ({ preset }) => {
       contentType="presets"
       icon={
         <ModelIcon
-          provider={modelDetails?.provider || "custom"}
+          provider={MODEL_DATA?.provider || "custom"}
           height={30}
           width={30}
         />

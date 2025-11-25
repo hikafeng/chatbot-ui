@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "../ui/dialog"
 import { Label } from "../ui/label"
 import { TextareaAutosize } from "../ui/textarea-autosize"
 import { usePromptAndCommand } from "./chat-hooks/use-prompt-and-command"
-
+import { useTranslation } from "react-i18next"
 interface PromptPickerProps {}
 
 export const PromptPicker: FC<PromptPickerProps> = ({}) => {
@@ -132,7 +132,7 @@ export const PromptPicker: FC<PromptPickerProps> = ({}) => {
       handleSubmitPromptVariables()
     }
   }
-
+  const { t } = useTranslation()
   return (
     <>
       {isPromptPickerOpen && (
@@ -186,7 +186,7 @@ export const PromptPicker: FC<PromptPickerProps> = ({}) => {
             </Dialog>
           ) : filteredPrompts.length === 0 ? (
             <div className="text-md flex h-14 cursor-pointer items-center justify-center italic hover:opacity-50">
-              No matching prompts.
+              {t("No matching prompts.")}
             </div>
           ) : (
             filteredPrompts.map((prompt, index) => (

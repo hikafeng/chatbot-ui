@@ -9,7 +9,7 @@ import { Tables, TablesInsert } from "@/supabase/types"
 import { FC, useContext, useEffect, useState } from "react"
 import { AssistantRetrievalSelect } from "./assistant-retrieval-select"
 import { AssistantToolSelect } from "./assistant-tool-select"
-
+import { AssistantMcpSelect } from "./assistant-mcp-select"
 interface CreateAssistantProps {
   isOpen: boolean
   onOpenChange: (isOpen: boolean) => void
@@ -40,7 +40,9 @@ export const CreateAssistant: FC<CreateAssistantProps> = ({
   const [selectedAssistantToolItems, setSelectedAssistantToolItems] = useState<
     Tables<"tools">[]
   >([])
-
+  const [selectedAssistantMcpItems, setSelectedAssistantMcpItems] = useState<
+    Tables<"mcps">[]
+  >([])
   useEffect(() => {
     setAssistantChatSettings(prevSettings => {
       const previousPrompt = prevSettings.prompt || ""
@@ -84,7 +86,19 @@ export const CreateAssistant: FC<CreateAssistantProps> = ({
       }
     })
   }
+  const handleMcpSelect = (item: Tables<"mcps">) => {
+    setSelectedAssistantMcpItems(prevState => {
+      const isItemAlreadySelected = prevState.find(
+        selectedItem => selectedItem.id === item.id
+      )
 
+      if (isItemAlreadySelected) {
+        return prevState.filter(selectedItem => selectedItem.id !== item.id)
+      } else {
+        return [...prevState, item]
+      }
+    })
+  }
   const checkIfModelIsToolCompatible = () => {
     if (!assistantChatSettings.model) return false
 
@@ -100,7 +114,21 @@ export const CreateAssistant: FC<CreateAssistantProps> = ({
 
     return isModelCompatible
   }
+  const checkIfModelIsMcpCompatible = () => {
+    if (!assistantChatSettings.model) return false
 
+    const compatibleModels = [
+      "gpt-4-turbo-preview",
+      "gpt-4-vision-preview",
+      "gpt-3.5-turbo-1106",
+      "gpt-4"
+    ]
+    const isModelCompatible = compatibleModels.includes(
+      assistantChatSettings.model
+    )
+
+    return isModelCompatible
+  }
   if (!profile) return null
   if (!selectedWorkspace) return null
 
@@ -128,7 +156,8 @@ export const CreateAssistant: FC<CreateAssistantProps> = ({
           collections: selectedAssistantRetrievalItems.filter(
             item => !item.hasOwnProperty("type")
           ) as Tables<"collections">[],
-          tools: selectedAssistantToolItems
+          tools: selectedAssistantToolItems,
+          mcps: selectedAssistantMcpItems
         } as TablesInsert<"assistants">
       }
       isOpen={isOpen}
@@ -201,6 +230,20 @@ export const CreateAssistant: FC<CreateAssistantProps> = ({
           ) : (
             <div className="pt-1 font-semibold">
               Model is not compatible with tools.
+            </div>
+          )}
+          {checkIfModelIsMcpCompatible() ? (
+            <div className="space-y-1">
+              <Label>Mcps</Label>
+
+              <AssistantMcpSelect
+                selectedAssistantMcps={selectedAssistantMcpItems}
+                onAssistantMcpsSelect={handleMcpSelect}
+              />
+            </div>
+          ) : (
+            <div className="pt-1 font-semibold">
+              Model is not compatible with mcps.
             </div>
           )}
         </>

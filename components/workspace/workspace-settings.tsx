@@ -27,6 +27,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs"
 import { TextareaAutosize } from "../ui/textarea-autosize"
 import { WithTooltip } from "../ui/with-tooltip"
 import { DeleteWorkspace } from "./delete-workspace"
+import { useTranslation } from "react-i18next"
 
 interface WorkspaceSettingsProps {}
 
@@ -74,7 +75,7 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
 
     setImageLink(workspaceImage)
   }, [workspaceImages])
-
+  const { t } = useTranslation()
   const handleSave = async () => {
     if (!selectedWorkspace) return
 
@@ -168,7 +169,7 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
     <Sheet open={isOpen} onOpenChange={setIsOpen}>
       <SheetTrigger asChild>
         <WithTooltip
-          display={<div>Workspace Settings</div>}
+          display={<div>{t("Workspace Settings")}</div>}
           trigger={
             <IconSettings
               className="ml-3 cursor-pointer pr-[5px] hover:opacity-50"
@@ -187,27 +188,27 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
         <div className="grow overflow-auto">
           <SheetHeader>
             <SheetTitle className="flex items-center justify-between">
-              Workspace Settings
+              {t("Workspace Settings")}
               {selectedWorkspace?.is_home && <IconHome />}
             </SheetTitle>
 
             {selectedWorkspace?.is_home && (
               <div className="text-sm font-light">
-                This is your home workspace for personal use.
+                {t("This is your home workspace for personal use.")}
               </div>
             )}
           </SheetHeader>
 
           <Tabs defaultValue="main">
             <TabsList className="mt-4 grid w-full grid-cols-2">
-              <TabsTrigger value="main">Main</TabsTrigger>
-              <TabsTrigger value="defaults">Defaults</TabsTrigger>
+              <TabsTrigger value="main">{t("Main")}</TabsTrigger>
+              <TabsTrigger value="defaults">{t("Defaults")}</TabsTrigger>
             </TabsList>
 
             <TabsContent className="mt-4 space-y-4" value="main">
               <>
                 <div className="space-y-1">
-                  <Label>Workspace Name</Label>
+                  <Label>{t("Workspace Name")}</Label>
 
                   <Input
                     placeholder="Name..."
@@ -216,18 +217,8 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
                   />
                 </div>
 
-                {/* <div className="space-y-1">
-                  <Label>Description</Label>
-
-                  <Input
-                    placeholder="Description... (optional)"
-                    value={description}
-                    onChange={e => setDescription(e.target.value)}
-                  />
-                </div> */}
-
                 <div className="space-y-1">
-                  <Label>Workspace Image</Label>
+                  <Label>{t("Workspace Image")}</Label>
 
                   <ImagePicker
                     src={imageLink}
@@ -242,11 +233,11 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
 
               <div className="space-y-1">
                 <Label>
-                  How would you like the AI to respond in this workspace?
+                  {t("How would you like the AI to respond in this workspace?")}
                 </Label>
 
                 <TextareaAutosize
-                  placeholder="Instructions... (optional)"
+                  placeholder={t("Instructions... (optional)")}
                   value={instructions}
                   onValueChange={setInstructions}
                   minRows={5}
@@ -263,7 +254,9 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
 
             <TabsContent className="mt-5" value="defaults">
               <div className="mb-4 text-sm">
-                These are the settings your workspace begins with when selected.
+                {t(
+                  "These are the settings your workspace begins with when selected."
+                )}
               </div>
 
               <ChatSettingsForm
@@ -286,11 +279,11 @@ export const WorkspaceSettings: FC<WorkspaceSettingsProps> = ({}) => {
 
           <div className="space-x-2">
             <Button variant="ghost" onClick={() => setIsOpen(false)}>
-              Cancel
+              {t("Cancel")}
             </Button>
 
             <Button ref={buttonRef} onClick={handleSave}>
-              Save
+              {t("Save")}
             </Button>
           </div>
         </div>

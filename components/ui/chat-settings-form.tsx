@@ -19,7 +19,7 @@ import {
 import { Slider } from "./slider"
 import { TextareaAutosize } from "./textarea-autosize"
 import { WithTooltip } from "./with-tooltip"
-
+import { useTranslation } from "react-i18next"
 interface ChatSettingsFormProps {
   chatSettings: ChatSettings
   onChangeChatSettings: (value: ChatSettings) => void
@@ -34,13 +34,14 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
   showTooltip = true
 }) => {
   const { profile, models } = useContext(ChatbotUIContext)
+  const { t } = useTranslation()
 
   if (!profile) return null
 
   return (
     <div className="space-y-3">
       <div className="space-y-1">
-        <Label>Model</Label>
+        <Label>{t("Model")}</Label>
 
         <ModelSelect
           selectedModelId={chatSettings.model}
@@ -51,7 +52,7 @@ export const ChatSettingsForm: FC<ChatSettingsFormProps> = ({
       </div>
 
       <div className="space-y-1">
-        <Label>Prompt</Label>
+        <Label>{t("Prompt")}</Label>
 
         <TextareaAutosize
           className="bg-background border-input border-2"
@@ -97,8 +98,13 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
   onChangeChatSettings,
   showTooltip
 }) => {
-  const { profile, selectedWorkspace, availableOpenRouterModels, models } =
-    useContext(ChatbotUIContext)
+  const {
+    profile,
+    selectedWorkspace,
+    availableOpenRouterModels,
+    availableDeepSeekModels,
+    models
+  } = useContext(ChatbotUIContext)
 
   const isCustomModel = models.some(
     model => model.model_id === chatSettings.model
@@ -108,18 +114,24 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
     return availableOpenRouterModels.find(model => model.modelId === modelId)
   }
 
+  function findDeepSeekModel(modelId: string) {
+    return availableDeepSeekModels.find(model => model.modelId === modelId)
+  }
   const MODEL_LIMITS = CHAT_SETTING_LIMITS[chatSettings.model] || {
     MIN_TEMPERATURE: 0,
     MAX_TEMPERATURE: 1,
     MAX_CONTEXT_LENGTH:
-      findOpenRouterModel(chatSettings.model)?.maxContext || 4096
+      findOpenRouterModel(chatSettings.model)?.maxContext ||
+      findDeepSeekModel(chatSettings.model)?.maxContext ||
+      4096
   }
+  const { t } = useTranslation()
 
   return (
     <div className="mt-5">
       <div className="space-y-3">
         <Label className="flex items-center space-x-1">
-          <div>Temperature:</div>
+          <div>{t("Temperature")}:</div>
 
           <div>{chatSettings.temperature}</div>
         </Label>
@@ -140,7 +152,7 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
 
       <div className="mt-6 space-y-3">
         <Label className="flex items-center space-x-1">
-          <div>Context Length:</div>
+          <div>{t("Context Length")}:</div>
 
           <div>{chatSettings.contextLength}</div>
         </Label>
@@ -175,14 +187,13 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
           }
         />
 
-        <Label>Chats Include Profile Context</Label>
-
+        <Label>{t("Chats Include Profile Context")}</Label>
         {showTooltip && (
           <WithTooltip
             delayDuration={0}
             display={
               <div className="w-[400px] p-3">
-                {profile?.profile_context || "No profile context."}
+                {profile?.profile_context || t("No profile context.")}
               </div>
             }
             trigger={
@@ -203,7 +214,7 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
           }
         />
 
-        <Label>Chats Include Workspace Instructions</Label>
+        <Label>{t("Chats Include Workspace Instructions")}</Label>
 
         {showTooltip && (
           <WithTooltip
@@ -211,7 +222,7 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
             display={
               <div className="w-[400px] p-3">
                 {selectedWorkspace?.instructions ||
-                  "No workspace instructions."}
+                  t("No workspace instructions.")}
               </div>
             }
             trigger={
@@ -222,8 +233,7 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
       </div>
 
       <div className="mt-5">
-        <Label>Embeddings Provider</Label>
-
+        <Label>{t("Embeddings Provider")}</Label>
         <Select
           value={chatSettings.embeddingsProvider}
           onValueChange={(embeddingsProvider: "openai" | "local") => {
@@ -241,10 +251,7 @@ const AdvancedContent: FC<AdvancedContentProps> = ({
             <SelectItem value="openai">
               {profile?.use_azure_openai ? "Azure OpenAI" : "OpenAI"}
             </SelectItem>
-
-            {window.location.hostname === "localhost" && (
-              <SelectItem value="local">Local</SelectItem>
-            )}
+            <SelectItem value="local">Local</SelectItem>
           </SelectContent>
         </Select>
       </div>

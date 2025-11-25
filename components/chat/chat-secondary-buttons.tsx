@@ -3,75 +3,93 @@ import { ChatbotUIContext } from "@/context/context"
 import { IconInfoCircle, IconMessagePlus } from "@tabler/icons-react"
 import { FC, useContext } from "react"
 import { WithTooltip } from "../ui/with-tooltip"
+import { useTranslation } from "react-i18next"
 
 interface ChatSecondaryButtonsProps {}
 
 export const ChatSecondaryButtons: FC<ChatSecondaryButtonsProps> = ({}) => {
   const { selectedChat } = useContext(ChatbotUIContext)
-
+  const { t } = useTranslation()
   const { handleNewChat } = useChatHandler()
 
   return (
     <>
       {selectedChat && (
-        <>
+        <div className="flex items-center space-x-2">
+          {/* Chat Info Tooltip */}
           <WithTooltip
             delayDuration={200}
             display={
-              <div>
-                <div className="text-xl font-bold">Chat Info</div>
+              <div className="p-3 text-sm leading-relaxed">
+                <div className="text-lg font-semibold">{t("Chat Info")}</div>
 
-                <div className="mx-auto mt-2 max-w-xs space-y-2 sm:max-w-sm md:max-w-md lg:max-w-lg">
-                  <div>Model: {selectedChat.model}</div>
-                  <div>Prompt: {selectedChat.prompt}</div>
-
-                  <div>Temperature: {selectedChat.temperature}</div>
-                  <div>Context Length: {selectedChat.context_length}</div>
-
+                <div className="mt-2 max-w-xs space-y-2 sm:max-w-sm md:max-w-md lg:max-w-lg">
                   <div>
-                    Profile Context:{" "}
-                    {selectedChat.include_profile_context
-                      ? "Enabled"
-                      : "Disabled"}
+                    {t("Model")}:{" "}
+                    <span className="font-medium">{selectedChat.model}</span>
                   </div>
                   <div>
-                    {" "}
-                    Workspace Instructions:{" "}
-                    {selectedChat.include_workspace_instructions
-                      ? "Enabled"
-                      : "Disabled"}
+                    {t("Prompt")}:{" "}
+                    <span className="font-medium">{selectedChat.prompt}</span>
                   </div>
-
                   <div>
-                    Embeddings Provider: {selectedChat.embeddings_provider}
+                    {t("Temperature")}:{" "}
+                    <span className="font-medium">
+                      {selectedChat.temperature}
+                    </span>
+                  </div>
+                  <div>
+                    {t("Context Length")}:{" "}
+                    <span className="font-medium">
+                      {selectedChat.context_length}
+                    </span>
+                  </div>
+                  <div>
+                    {t("Profile Context")}:{" "}
+                    <span className="font-medium">
+                      {selectedChat.include_profile_context
+                        ? t("Enabled")
+                        : t("Disabled")}
+                    </span>
+                  </div>
+                  <div>
+                    {t("Workspace Instructions")}:{" "}
+                    <span className="font-medium">
+                      {selectedChat.include_workspace_instructions
+                        ? t("Enabled")
+                        : t("Disabled")}
+                    </span>
+                  </div>
+                  <div>
+                    {t("Embeddings Provider")}:{" "}
+                    <span className="font-medium">
+                      {selectedChat.embeddings_provider}
+                    </span>
                   </div>
                 </div>
               </div>
             }
             trigger={
-              <div className="mt-1">
-                <IconInfoCircle
-                  className="cursor-default hover:opacity-50"
-                  size={24}
-                />
+              <div className="cursor-pointer transition-opacity duration-200 hover:opacity-60">
+                <IconInfoCircle size={24} />
               </div>
             }
           />
 
+          {/* New Chat Button */}
           <WithTooltip
             delayDuration={200}
-            display={<div>Start a new chat</div>}
+            display={t("Start a new chat")}
             trigger={
-              <div className="mt-1">
-                <IconMessagePlus
-                  className="cursor-pointer hover:opacity-50"
-                  size={24}
-                  onClick={handleNewChat}
-                />
+              <div
+                className="cursor-pointer transition-opacity duration-200 hover:opacity-60"
+                onClick={handleNewChat}
+              >
+                <IconMessagePlus size={24} />
               </div>
             }
           />
-        </>
+        </div>
       )}
     </>
   )

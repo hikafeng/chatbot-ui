@@ -12,11 +12,12 @@ import { getPresetWorkspacesByWorkspaceId } from "@/db/presets"
 import { getPromptWorkspacesByWorkspaceId } from "@/db/prompts"
 import { getAssistantImageFromStorage } from "@/db/storage/assistant-images"
 import { getToolWorkspacesByWorkspaceId } from "@/db/tools"
+import { getMcpWorkspacesByWorkspaceId } from "@/db/mcps"
 import { getWorkspaceById } from "@/db/workspaces"
 import { convertBlobToBase64 } from "@/lib/blob-to-b64"
 import { supabase } from "@/lib/supabase/browser-client"
 import { LLMID } from "@/types"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { ReactNode, useContext, useEffect, useState } from "react"
 import Loading from "../loading"
 
@@ -28,6 +29,7 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
   const router = useRouter()
 
   const params = useParams()
+  const searchParams = useSearchParams()
   const workspaceId = params.workspaceid as string
 
   const {
@@ -41,6 +43,7 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     setPresets,
     setPrompts,
     setTools,
+    setMcps,
     setModels,
     selectedWorkspace,
     setSelectedWorkspace,
@@ -152,21 +155,26 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
     const toolData = await getToolWorkspacesByWorkspaceId(workspaceId)
     setTools(toolData.tools)
 
+    const mcpData = await getMcpWorkspacesByWorkspaceId(workspaceId)
+    setMcps(mcpData.mcps)
+
     const modelData = await getModelWorkspacesByWorkspaceId(workspaceId)
     setModels(modelData.models)
 
     setChatSettings({
-      model: (workspace?.default_model || "gpt-4-1106-preview") as LLMID,
+      model: (searchParams.get("model") ||
+        workspace?.default_model ||
+        "gpt-4-1106-preview") as LLMID,
       prompt:
         workspace?.default_prompt ||
         "You are a friendly, helpful AI assistant.",
-      temperature: workspace?.default_temperature || 0.5,
+      temperature: workspace?.default_temperature || 0.7,
       contextLength: workspace?.default_context_length || 4096,
       includeProfileContext: workspace?.include_profile_context || true,
       includeWorkspaceInstructions:
         workspace?.include_workspace_instructions || true,
       embeddingsProvider:
-        (workspace?.embeddings_provider as "openai" | "local") || "openai"
+        (workspace?.embeddings_provider as "openai" | "local") || "local"
     })
 
     setLoading(false)

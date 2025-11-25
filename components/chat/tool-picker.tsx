@@ -3,6 +3,7 @@ import { Tables } from "@/supabase/types"
 import { IconBolt } from "@tabler/icons-react"
 import { FC, useContext, useEffect, useRef } from "react"
 import { usePromptAndCommand } from "./chat-hooks/use-prompt-and-command"
+import { useTranslation } from "react-i18next"
 
 interface ToolPickerProps {}
 
@@ -68,14 +69,14 @@ export const ToolPicker: FC<ToolPickerProps> = ({}) => {
         itemsRef.current[nextIndex]?.focus()
       }
     }
-
+  const { t } = useTranslation()
   return (
     <>
       {isToolPickerOpen && (
         <div className="bg-background flex flex-col space-y-1 rounded-xl border-2 p-2 text-sm">
           {filteredTools.length === 0 ? (
             <div className="text-md flex h-14 cursor-pointer items-center justify-center italic hover:opacity-50">
-              No matching tools.
+              {t("No matching tools.")}
             </div>
           ) : (
             <>

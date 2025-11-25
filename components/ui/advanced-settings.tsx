@@ -9,6 +9,7 @@ import { FC, useState } from "react"
 interface AdvancedSettingsProps {
   children: React.ReactNode
 }
+import { useTranslation } from "react-i18next"
 
 export const AdvancedSettings: FC<AdvancedSettingsProps> = ({ children }) => {
   const [isOpen, setIsOpen] = useState(
@@ -20,12 +21,13 @@ export const AdvancedSettings: FC<AdvancedSettingsProps> = ({ children }) => {
     setIsOpen(isOpen)
     // localStorage.setItem("advanced-settings-open", String(isOpen))
   }
+  const { t } = useTranslation()
 
   return (
     <Collapsible className="pt-2" open={isOpen} onOpenChange={handleOpenChange}>
       <CollapsibleTrigger className="hover:opacity-50">
         <div className="flex items-center font-bold">
-          <div className="mr-1">Advanced Settings</div>
+          <div className="mr-1">{t("Advanced Settings")}</div>
           {isOpen ? (
             <IconChevronDown size={20} stroke={3} />
           ) : (

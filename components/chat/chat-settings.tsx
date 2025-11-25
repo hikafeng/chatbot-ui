@@ -19,7 +19,8 @@ export const ChatSettings: FC<ChatSettingsProps> = ({}) => {
     models,
     availableHostedModels,
     availableLocalModels,
-    availableOpenRouterModels
+    availableOpenRouterModels,
+    availableDeepSeekModels
   } = useContext(ChatbotUIContext)
 
   const buttonRef = useRef<HTMLButtonElement>(null)
@@ -55,10 +56,11 @@ export const ChatSettings: FC<ChatSettingsProps> = ({}) => {
       provider: "custom" as ModelProvider,
       hostedId: model.id,
       platformLink: "",
-      imageInput: false
+      imageInput: model.image_input
     })),
     ...availableHostedModels,
     ...availableLocalModels,
+    ...availableDeepSeekModels,
     ...availableOpenRouterModels
   ]
 
@@ -72,7 +74,7 @@ export const ChatSettings: FC<ChatSettingsProps> = ({}) => {
           className="flex items-center space-x-2"
           variant="ghost"
         >
-          <div className="text-lg">
+          <div className="max-w-[120px] truncate text-lg sm:max-w-[300px] lg:max-w-[500px]">
             {fullModel?.modelName || chatSettings.model}
           </div>
 

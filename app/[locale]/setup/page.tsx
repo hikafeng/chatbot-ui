@@ -8,7 +8,8 @@ import {
 } from "@/db/workspaces"
 import {
   fetchHostedModels,
-  fetchOpenRouterModels
+  fetchOpenRouterModels,
+  fetchDeepSeekModels
 } from "@/lib/models/fetch-models"
 import { supabase } from "@/lib/supabase/browser-client"
 import { TablesUpdate } from "@/supabase/types"
@@ -21,7 +22,7 @@ import {
   SETUP_STEP_COUNT,
   StepContainer
 } from "../../../components/setup/step-container"
-
+import { getEnvVarOrEdgeConfigValue } from "@/utils/getEnvVarOrEdgeConfigValue"
 export default function SetupPage() {
   const {
     profile,
@@ -60,6 +61,7 @@ export default function SetupPage() {
   const [groqAPIKey, setGroqAPIKey] = useState("")
   const [perplexityAPIKey, setPerplexityAPIKey] = useState("")
   const [openrouterAPIKey, setOpenrouterAPIKey] = useState("")
+  const [deepseekAPIKey, setDeepSeekAPIKey] = useState("")
 
   useEffect(() => {
     ;(async () => {
@@ -85,15 +87,25 @@ export default function SetupPage() {
           setAvailableHostedModels(data.hostedModels)
 
           if (profile["openrouter_api_key"] || data.envKeyMap["openrouter"]) {
-            const openRouterModels = await fetchOpenRouterModels()
+            const openRouterModels = await fetchOpenRouterModels(
+              profile["openrouter_api_key"]
+            )
             if (!openRouterModels) return
             setAvailableOpenRouterModels(openRouterModels)
+          }
+
+          if (profile["deepseek_api_key"] || data.envKeyMap["deepseek"]) {
+            const deepSeekModels = await fetchDeepSeekModels(
+              profile["deepseek_api_key"]
+            )
+            if (!deepSeekModels) return
+            setAvailableOpenRouterModels(deepSeekModels)
           }
 
           const homeWorkspaceId = await getHomeWorkspaceByUserId(
             session.user.id
           )
-          return router.push(`/${homeWorkspaceId}/chat`)
+          return router.push(`/${homeWorkspaceId}/c`)
         }
       }
     })()
@@ -133,6 +145,7 @@ export default function SetupPage() {
       groq_api_key: groqAPIKey,
       perplexity_api_key: perplexityAPIKey,
       openrouter_api_key: openrouterAPIKey,
+      deepseek_api_key: deepseekAPIKey,
       use_azure_openai: useAzureOpenai,
       azure_openai_api_key: azureOpenaiAPIKey,
       azure_openai_endpoint: azureOpenaiEndpoint,
@@ -152,9 +165,21 @@ export default function SetupPage() {
     setSelectedWorkspace(homeWorkspace!)
     setWorkspaces(workspaces)
 
-    return router.push(`/${homeWorkspace?.id}/chat`)
+    return router.push(`/${homeWorkspace?.id}/c`)
   }
+  const [siteName, setSiteName] = useState("ChatbotUI")
 
+  useEffect(() => {
+    const fetchEnvVar = async () => {
+      const envValue = await getEnvVarOrEdgeConfigValue("NEXT_PUBLIC_SITE_NAME")
+      if (envValue) {
+        setSiteName(envValue)
+      }
+    }
+
+    fetchEnvVar()
+  }, [])
+  const stepTitleStr = "Welcome to " + siteName
   const renderStep = (stepNum: number) => {
     switch (stepNum) {
       // Profile Step
@@ -163,7 +188,7 @@ export default function SetupPage() {
           <StepContainer
             stepDescription="Let's create your profile."
             stepNum={currentStep}
-            stepTitle="Welcome to Chatbot UI"
+            stepTitle={stepTitleStr}
             onShouldProceed={handleShouldProceed}
             showNextButton={!!(username && usernameAvailable)}
             showBackButton={false}
@@ -221,6 +246,8 @@ export default function SetupPage() {
               onUseAzureOpenaiChange={setUseAzureOpenai}
               openrouterAPIKey={openrouterAPIKey}
               onOpenrouterAPIKeyChange={setOpenrouterAPIKey}
+              deepseekAPIKey={deepseekAPIKey}
+              onDeepSeekAPIKeyChange={setDeepSeekAPIKey}
             />
           </StepContainer>
         )

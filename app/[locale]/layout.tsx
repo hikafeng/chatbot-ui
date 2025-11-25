@@ -6,16 +6,29 @@ import initTranslations from "@/lib/i18n"
 import { Database } from "@/supabase/types"
 import { createServerClient } from "@supabase/ssr"
 import { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
+import localFont from "next/font/local"
 import { cookies } from "next/headers"
 import { ReactNode } from "react"
 import "./globals.css"
-
-const inter = Inter({ subsets: ["latin"] })
-const APP_NAME = "Chatbot UI"
-const APP_DEFAULT_TITLE = "Chatbot UI"
-const APP_TITLE_TEMPLATE = "%s - Chatbot UI"
-const APP_DESCRIPTION = "Chabot UI PWA!"
+import "katex/dist/katex.min.css"
+import { Analytics } from "@vercel/analytics/react"
+import { getEnvVarOrEdgeConfigValue } from "@/utils/getEnvVarOrEdgeConfigValue"
+import { SUPABASE_SERVER_URL, SUPABASE_ANON_KEY } from "@/config"
+const inter = localFont({
+  src: "./fonts/Inter-Regular.woff2",
+  display: "swap"
+})
+const NEXT_PUBLIC_SITE_URL_STR =
+  (await getEnvVarOrEdgeConfigValue("NEXT_PUBLIC_SITE_URL")) ||
+  "https://chat.hikafeng.com"
+const NEXT_PUBLIC_SITE_NAME_STR =
+  (await getEnvVarOrEdgeConfigValue("NEXT_PUBLIC_SITE_NAME")) || "ChatbotUI"
+const ENALBE_VERCEL_ANALYTICS =
+  (await getEnvVarOrEdgeConfigValue("ENALBE_VERCEL_ANALYTICS")) || "false"
+const APP_NAME = NEXT_PUBLIC_SITE_NAME_STR
+const APP_DEFAULT_TITLE = NEXT_PUBLIC_SITE_NAME_STR
+const APP_TITLE_TEMPLATE = "%s - " + NEXT_PUBLIC_SITE_NAME_STR
+const APP_DESCRIPTION = NEXT_PUBLIC_SITE_NAME_STR + " PWA!"
 
 interface RootLayoutProps {
   children: ReactNode
@@ -23,8 +36,8 @@ interface RootLayoutProps {
     locale: string
   }
 }
-
 export const metadata: Metadata = {
+  metadataBase: new URL(NEXT_PUBLIC_SITE_URL_STR),
   applicationName: APP_NAME,
   title: {
     default: APP_DEFAULT_TITLE,
@@ -72,8 +85,8 @@ export default async function RootLayout({
 }: RootLayoutProps) {
   const cookieStore = cookies()
   const supabase = createServerClient<Database>(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    SUPABASE_SERVER_URL!,
+    SUPABASE_ANON_KEY!,
     {
       cookies: {
         get(name: string) {
@@ -85,18 +98,18 @@ export default async function RootLayout({
   const session = (await supabase.auth.getSession()).data.session
 
   const { t, resources } = await initTranslations(locale, i18nNamespaces)
-
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <Providers attribute="class" defaultTheme="dark">
+        {ENALBE_VERCEL_ANALYTICS === "true" && <Analytics />}
+        <Providers attribute="class" defaultTheme="light">
           <TranslationsProvider
             namespaces={i18nNamespaces}
             locale={locale}
             resources={resources}
           >
             <Toaster richColors position="top-center" duration={3000} />
-            <div className="bg-background text-foreground flex h-screen flex-col items-center">
+            <div className="bg-background text-foreground flex h-dvh flex-col items-center overflow-x-auto">
               {session ? <GlobalState>{children}</GlobalState> : children}
             </div>
           </TranslationsProvider>

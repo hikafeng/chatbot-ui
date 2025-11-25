@@ -19,7 +19,9 @@ interface APIStepProps {
   perplexityAPIKey: string
   useAzureOpenai: boolean
   openrouterAPIKey: string
+  deepseekAPIKey: string
   onOpenrouterAPIKeyChange: (value: string) => void
+  onDeepSeekAPIKeyChange: (value: string) => void
   onOpenaiAPIKeyChange: (value: string) => void
   onOpenaiOrgIDChange: (value: string) => void
   onAzureOpenaiAPIKeyChange: (value: string) => void
@@ -51,6 +53,7 @@ export const APIStep: FC<APIStepProps> = ({
   groqAPIKey,
   perplexityAPIKey,
   openrouterAPIKey,
+  deepseekAPIKey,
   useAzureOpenai,
   onOpenaiAPIKeyChange,
   onOpenaiOrgIDChange,
@@ -66,7 +69,8 @@ export const APIStep: FC<APIStepProps> = ({
   onGroqAPIKeyChange,
   onPerplexityAPIKeyChange,
   onUseAzureOpenaiChange,
-  onOpenrouterAPIKeyChange
+  onOpenrouterAPIKeyChange,
+  onDeepSeekAPIKeyChange
 }) => {
   return (
     <>
@@ -236,6 +240,16 @@ export const APIStep: FC<APIStepProps> = ({
           type="password"
           value={openrouterAPIKey}
           onChange={e => onOpenrouterAPIKeyChange(e.target.value)}
+        />
+      </div>
+      <div className="space-y-1">
+        <Label>DeepSeek API Key</Label>
+
+        <Input
+          placeholder="DeepSeek API Key"
+          type="password"
+          value={deepseekAPIKey}
+          onChange={e => onDeepSeekAPIKeyChange(e.target.value)}
         />
       </div>
     </>

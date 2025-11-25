@@ -16,7 +16,7 @@ import { ContentType } from "@/types"
 import { IconTrash } from "@tabler/icons-react"
 import { FC, useContext, useRef, useState } from "react"
 import { toast } from "sonner"
-
+import { useTranslation } from "react-i18next"
 interface DeleteFolderProps {
   folder: Tables<"folders">
   contentType: ContentType
@@ -26,6 +26,7 @@ export const DeleteFolder: FC<DeleteFolderProps> = ({
   folder,
   contentType
 }) => {
+  const { t } = useTranslation()
   const {
     setChats,
     setFolders,
@@ -35,6 +36,7 @@ export const DeleteFolder: FC<DeleteFolderProps> = ({
     setCollections,
     setAssistants,
     setTools,
+    setMcps,
     setModels
   } = useContext(ChatbotUIContext)
 
@@ -50,6 +52,7 @@ export const DeleteFolder: FC<DeleteFolderProps> = ({
     collections: setCollections,
     assistants: setAssistants,
     tools: setTools,
+    mcps: setMcps,
     models: setModels
   }
 
@@ -107,16 +110,18 @@ export const DeleteFolder: FC<DeleteFolderProps> = ({
 
       <DialogContent className="min-w-[550px]">
         <DialogHeader>
-          <DialogTitle>Delete {folder.name}</DialogTitle>
+          <DialogTitle>
+            {t("Delete")} {folder.name}
+          </DialogTitle>
 
           <DialogDescription>
-            Are you sure you want to delete this folder?
+            {t("Are you sure you want to delete this folder?")}
           </DialogDescription>
         </DialogHeader>
 
         <DialogFooter>
           <Button variant="ghost" onClick={() => setShowFolderDialog(false)}>
-            Cancel
+            {t("Cancel")}
           </Button>
 
           <Button
@@ -124,7 +129,7 @@ export const DeleteFolder: FC<DeleteFolderProps> = ({
             variant="destructive"
             onClick={handleDeleteFolderAndItems}
           >
-            Delete Folder & Included Items
+            {t("Delete Folder & Included Items")}
           </Button>
 
           <Button
@@ -132,7 +137,7 @@ export const DeleteFolder: FC<DeleteFolderProps> = ({
             variant="destructive"
             onClick={handleDeleteFolderOnly}
           >
-            Delete Folder Only
+            {t("Delete Folder Only")}
           </Button>
         </DialogFooter>
       </DialogContent>
