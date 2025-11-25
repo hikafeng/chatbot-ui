@@ -11,6 +11,15 @@ export interface ChatSettings {
   embeddingsProvider: "openai" | "local"
 }
 
+export interface Settings {
+  apikey: string
+  model: LLMID
+  prompt: string
+  temperature: number
+  contextLength: number
+  max_tokens: number
+}
+
 export interface ChatPayload {
   chatSettings: ChatSettings
   workspaceInstructions: string
@@ -22,5 +31,10 @@ export interface ChatPayload {
 
 export interface ChatAPIPayload {
   chatSettings: ChatSettings
+  messages: Tables<"messages">[]
+}
+
+export interface APIPayload {
+  setting: Settings
   messages: Tables<"messages">[]
 }

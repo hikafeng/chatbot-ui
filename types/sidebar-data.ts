@@ -8,6 +8,7 @@ export type DataListType =
   | Tables<"files">[]
   | Tables<"assistants">[]
   | Tables<"tools">[]
+  | Tables<"mcps">[]
   | Tables<"models">[]
 
 export type DataItemType =
@@ -18,4 +19,5 @@ export type DataItemType =
   | Tables<"files">
   | Tables<"assistants">
   | Tables<"tools">
+  | Tables<"mcps">
   | Tables<"models">

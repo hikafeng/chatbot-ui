@@ -3,7 +3,7 @@ import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
 import { Database } from "@/supabase/types"
 import { createClient } from "@supabase/supabase-js"
 import OpenAI from "openai"
-
+import { SUPABASE_SERVER_URL, SUPABASE_SERVICE_ROLE_KEY } from "@/config"
 export async function POST(request: Request) {
   const json = await request.json()
   const { userInput, fileIds, embeddingsProvider, sourceCount } = json as {
@@ -17,8 +17,8 @@ export async function POST(request: Request) {
 
   try {
     const supabaseAdmin = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      SUPABASE_SERVER_URL!,
+      SUPABASE_SERVICE_ROLE_KEY!
     )
 
     const profile = await getServerProfile()

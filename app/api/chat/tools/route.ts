@@ -5,23 +5,93 @@ import { ChatSettings } from "@/types"
 import { OpenAIStream, StreamingTextResponse } from "ai"
 import OpenAI from "openai"
 import { ChatCompletionCreateParamsBase } from "openai/resources/chat/completions.mjs"
-
+import { LLM } from "@/types"
 export async function POST(request: Request) {
   const json = await request.json()
-  const { chatSettings, messages, selectedTools } = json as {
+  const { chatSettings, messages, selectedTools, modelData } = json as {
     chatSettings: ChatSettings
     messages: any[]
     selectedTools: Tables<"tools">[]
+    modelData: LLM
   }
 
   try {
     const profile = await getServerProfile()
 
     checkApiKey(profile.openai_api_key, "OpenAI")
+    let modelBaseUrl = ""
+    let modelApiKey = ""
+    const provider =
+      modelData.provider === "openai" && profile.use_azure_openai
+        ? "azure"
+        : modelData.provider
 
+    if (provider === "azure") {
+      const AzureOpenaiENDPOINT = profile.azure_openai_endpoint
+      const AzureOpenaiKEY = profile.azure_openai_api_key
+      let AzureOpenaiDEPLOYMENT_ID = ""
+      switch (chatSettings.model) {
+        case "gpt-3.5-turbo":
+          AzureOpenaiDEPLOYMENT_ID = profile.azure_openai_35_turbo_id || ""
+          break
+        case "gpt-4-turbo-preview":
+          AzureOpenaiDEPLOYMENT_ID = profile.azure_openai_45_turbo_id || ""
+          break
+        case "gpt-4-vision-preview":
+          AzureOpenaiDEPLOYMENT_ID = profile.azure_openai_45_vision_id || ""
+          break
+        default:
+          return new Response(JSON.stringify({ message: "Model not found" }), {
+            status: 400
+          })
+      }
+      if (
+        !AzureOpenaiENDPOINT ||
+        !AzureOpenaiKEY ||
+        !AzureOpenaiDEPLOYMENT_ID
+      ) {
+        return new Response(
+          JSON.stringify({ message: "Azure resources not found" }),
+          {
+            status: 400
+          }
+        )
+      }
+      modelBaseUrl = `${AzureOpenaiENDPOINT}/openai/deployments/${AzureOpenaiDEPLOYMENT_ID}`
+      modelApiKey = AzureOpenaiKEY
+    } else if (provider === "openai") {
+      modelBaseUrl = "https://api.openai.com/v1"
+      modelApiKey = profile.openai_api_key || ""
+    } else if (provider === "openrouter") {
+      modelBaseUrl = "https://openrouter.ai/api/v1"
+      modelApiKey = profile.openrouter_api_key || ""
+    } else if (provider === "anthropic") {
+      return new Response(
+        JSON.stringify({
+          message: "anthropic tool not support, please wait fix"
+        }),
+        {
+          status: 400
+        }
+      )
+    } else if (provider === "custom") {
+      return new Response(
+        JSON.stringify({ message: "custom tool not support, please wait fix" }),
+        {
+          status: 400
+        }
+      )
+    } else {
+      return new Response(
+        JSON.stringify({ message: "other model not support, please wait fix" }),
+        {
+          status: 400
+        }
+      )
+    }
     const openai = new OpenAI({
-      apiKey: profile.openai_api_key || "",
-      organization: profile.openai_organization_id
+      baseURL: modelBaseUrl,
+      apiKey: modelApiKey
     })
 
     let allTools: OpenAI.Chat.Completions.ChatCompletionTool[] = []

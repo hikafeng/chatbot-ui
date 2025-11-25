@@ -6,7 +6,7 @@ import { FileItemChunk } from "@/types"
 import { createClient } from "@supabase/supabase-js"
 import { NextResponse } from "next/server"
 import OpenAI from "openai"
-
+import { SUPABASE_SERVER_URL, SUPABASE_SERVICE_ROLE_KEY } from "@/config"
 export async function POST(req: Request) {
   const json = await req.json()
   const { text, fileId, embeddingsProvider, fileExtension } = json as {
@@ -18,8 +18,8 @@ export async function POST(req: Request) {
 
   try {
     const supabaseAdmin = createClient<Database>(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      SUPABASE_SERVER_URL!,
+      SUPABASE_SERVICE_ROLE_KEY!
     )
 
     const profile = await getServerProfile()

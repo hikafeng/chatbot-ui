@@ -6,4 +6,5 @@ export type ContentType =
   | "collections"
   | "assistants"
   | "tools"
+  | "mcps"
   | "models"

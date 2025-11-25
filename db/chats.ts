@@ -79,3 +79,13 @@ export const deleteChat = async (chatId: string) => {
 
   return true
 }
+
+export const deleteAllChats = async (userId: string) => {
+  const { error } = await supabase.from("chats").delete().eq("user_id", userId)
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return true
+}

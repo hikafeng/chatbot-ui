@@ -1,5 +1,3 @@
-import { checkApiKey, getServerProfile } from "@/lib/server/server-chat-helpers"
-import { ChatSettings } from "@/types"
 import { OpenAIStream, StreamingTextResponse } from "ai"
 import { ServerRuntime } from "next"
 import OpenAI from "openai"
@@ -9,30 +7,31 @@ export const runtime: ServerRuntime = "edge"
 
 export async function POST(request: Request) {
   const json = await request.json()
-  const { chatSettings, messages } = json as {
-    chatSettings: ChatSettings
+  // 设置 temperature 和 max_tokens 的默认值
+  const {
+    model,
+    messages,
+    temperature = 0.7,
+    max_tokens = 4096
+  } = json as {
+    model: string
     messages: any[]
+    temperature: number
+    max_tokens: number
   }
 
   try {
-    const profile = await getServerProfile()
-
-    checkApiKey(profile.openai_api_key, "OpenAI")
+    const apiKey = request.headers.get("Authorization")?.replace("Bearer ", "")
 
     const openai = new OpenAI({
-      apiKey: profile.openai_api_key || "",
-      organization: profile.openai_organization_id
+      apiKey: apiKey || ""
     })
 
     const response = await openai.chat.completions.create({
-      model: chatSettings.model as ChatCompletionCreateParamsBase["model"],
+      model: model as ChatCompletionCreateParamsBase["model"],
       messages: messages as ChatCompletionCreateParamsBase["messages"],
-      temperature: chatSettings.temperature,
-      max_tokens:
-        chatSettings.model === "gpt-4-vision-preview" ||
-        chatSettings.model === "gpt-4o"
-          ? 4096
-          : null, // TODO: Fix
+      temperature, // 使用默认值或请求中提供的值
+      max_tokens, // 使用默认值或请求中提供的值
       stream: true
     })
 
@@ -44,11 +43,9 @@ export async function POST(request: Request) {
     const errorCode = error.status || 500
 
     if (errorMessage.toLowerCase().includes("api key not found")) {
-      errorMessage =
-        "OpenAI API Key not found. Please set it in your profile settings."
+      errorMessage = "OpenAI API Key not found."
     } else if (errorMessage.toLowerCase().includes("incorrect api key")) {
-      errorMessage =
-        "OpenAI API Key is incorrect. Please fix it in your profile settings."
+      errorMessage = "OpenAI API Key is incorrect."
     }
 
     return new Response(JSON.stringify({ message: errorMessage }), {
