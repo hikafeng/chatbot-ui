@@ -1,26 +1,14 @@
 import { Database } from "@/supabase/types"
 import { ChatSettings } from "@/types"
 import { createClient } from "@/lib/supabase/server"
+import { OpenAIStream, StreamingTextResponse } from "ai"
 import { ServerRuntime } from "next"
-import { cookies } from "next/headers"
+import OpenAI from "openai"
+import { ChatCompletionCreateParamsBase } from "openai/resources/chat/completions.mjs"
+import { SUPABASE_PUBLIC_URL, SUPABASE_ANON_KEY } from "@/config"
 
-// Constants
-const MIMO_MODEL_KEYWORD = 'mimo'
-const THINKING_ENABLED = 'enabled'
-const THINKING_DISABLED = 'disable'
-
+import { cookies, headers } from "next/headers"
 export const runtime: ServerRuntime = "edge"
-
-interface RequestBody {
-  model: string
-  messages: any[]
-  temperature: number
-  max_tokens: number
-  stream: boolean
-  response_format: { type: string }
-  thinking?: { type: string }
-  chat_template_kwargs?: { enable_thinking: boolean }
-}
 
 export async function POST(request: Request) {
   const json = await request.json()
@@ -34,6 +22,10 @@ export async function POST(request: Request) {
   try {
     const cookieStore = cookies()
     const supabaseAdmin = createClient(cookieStore)
+    // const supabaseAdmin = createClient<Database>(
+    //   SUPABASE_PUBLIC_URL!,
+    //   SUPABASE_ANON_KEY!
+    // )
 
     const { data: customModel, error } = await supabaseAdmin
       .from("models")
@@ -41,14 +33,13 @@ export async function POST(request: Request) {
       .eq("id", customModelId)
       .single()
 
-    if (error || !customModel) {
-      throw new Error(error?.message || "Custom model not found")
+    if (!customModel && error) {
+      throw new Error(error.message)
     }
-
     const apiUrl = customModel.base_url + "/chat/completions"
-    const isMimoModel = chatSettings.model.toLowerCase().includes(MIMO_MODEL_KEYWORD)
+    const isMimoModel = chatSettings.model.toLowerCase().includes("mimo")
 
-    const requestBody: RequestBody = {
+    let requestBody: any = {
       model: chatSettings.model,
       messages: messages,
       temperature: chatSettings.temperature,
@@ -58,13 +49,13 @@ export async function POST(request: Request) {
     }
 
     if (isMimoModel) {
-      requestBody.thinking = {
-        type: isThinkingEnabled ? THINKING_ENABLED : THINKING_DISABLED
-      }
-    } else if (!isThinkingEnabled) {
-      requestBody.chat_template_kwargs = { enable_thinking: false }
+      const thinkingType = isThinkingEnabled ? "enabled" : "disabled"
+      requestBody.thinking = { type: thinkingType }
+    } else {
+      const thinkingType = isThinkingEnabled ? true : false
+      requestBody.chat_template_kwargs = { enable_thinking: thinkingType }
     }
-
+    console.log(requestBody)
     const response = await fetch(apiUrl, {
       method: "POST",
       headers: {
@@ -83,7 +74,7 @@ export async function POST(request: Request) {
     const reader = response.body?.getReader()
     const encoder = new TextEncoder()
     let lastSentTime = Date.now()
-    let buffer = "" // Buffer for incomplete JSON fragments
+    let buffer = "" // 用于存储未完整的 JSON 片段
 
     return new Response(
       new ReadableStream({
@@ -99,16 +90,16 @@ export async function POST(request: Request) {
               if (done) break
 
               const text = new TextDecoder().decode(value)
-              buffer += text
+              buffer += text // 追加到 buffer
 
               const lines = buffer
                 .split("\n")
                 .filter(line => line.trim() !== "")
-              buffer = ""
+              buffer = "" // 清空 buffer，准备重新存储未解析的数据
 
               for (const line of lines) {
                 if (line.startsWith("data:")) {
-                  const jsonData = line.slice(5).trim()
+                  let jsonData = line.slice(5).trim()
 
                   if (jsonData === "[DONE]") {
                     controller.close()
@@ -116,35 +107,45 @@ export async function POST(request: Request) {
                   }
 
                   try {
+                    // **尝试解析 JSON**
                     const json = JSON.parse(jsonData)
 
                     if (json.choices && json.choices.length > 0) {
                       const delta = json.choices[0].delta
-                      const chunks: string[] = []
+                      let chunks = []
 
                       if (delta.content != null) {
-                        chunks.push(JSON.stringify({ content: delta.content }) + "\n")
+                        chunks.push(
+                          JSON.stringify({ content: delta.content }) + "\n"
+                        )
                       }
 
                       if (delta.reasoning_content != null) {
-                        chunks.push(JSON.stringify({ reasoning_content: delta.reasoning_content }) + "\n")
+                        chunks.push(
+                          JSON.stringify({
+                            reasoning_content: delta.reasoning_content
+                          }) + "\n"
+                        )
                       }
 
                       for (const chunk of chunks) {
                         controller.enqueue(encoder.encode(chunk))
                       }
                     }
-                  } catch (parseError) {
-                    // JSON might be split, store in buffer
-                    console.warn("JSON parse error, storing in buffer:", jsonData)
-                    buffer = jsonData
+                  } catch (error) {
+                    // **解析失败，说明 JSON 可能是被拆分的，存入 buffer**
+                    console.warn(
+                      "JSON parse error, storing in buffer:",
+                      jsonData
+                    )
+                    buffer = jsonData // 存入 buffer，等待下次拼接
                   }
                 }
               }
 
-              // Send a keep-alive every 5 seconds to prevent Vercel timeout
+              // **每 5 秒发送一个空数据包，防止 Vercel 误判超时**
               if (Date.now() - lastSentTime > 5000) {
-                controller.enqueue(encoder.encode(" "))
+                controller.enqueue(encoder.encode(" ")) // 发送一个空格，保持连接
                 lastSentTime = Date.now()
               }
             }
@@ -164,9 +165,11 @@ export async function POST(request: Request) {
     const errorCode = error.status || 500
 
     if (errorMessage.toLowerCase().includes("api key not found")) {
-      errorMessage = "Custom API Key not found. Please set it in your profile settings."
+      errorMessage =
+        "Custom API Key not found. Please set it in your profile settings."
     } else if (errorMessage.toLowerCase().includes("incorrect api key")) {
-      errorMessage = "Custom API Key is incorrect. Please fix it in your profile settings."
+      errorMessage =
+        "Custom API Key is incorrect. Please fix it in your profile settings."
     }
 
     return new Response(JSON.stringify({ message: errorMessage }), {
