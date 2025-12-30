@@ -158,55 +158,58 @@ export default async function Login({
   }
 
   return (
-    <div className="flex w-full flex-1 flex-col justify-center gap-4 px-8 py-8 sm:max-w-md">
-      <form
-        className="animate-in text-foreground flex w-full flex-1 flex-col justify-center gap-4"
-        action={signIn}
-      >
-        <div className="flex justify-center mb-4">
-          <Brand />
-        </div>
+    <div className="flex w-full flex-1 flex-col justify-center px-8 py-8">
+      <div className="w-full max-w-md mx-auto bg-card rounded-lg shadow-md p-6">
+        <form
+          className="animate-in text-foreground flex flex-col gap-6"
+          action={signIn}
+        >
+          <div className="flex justify-center mb-4">
+            <Brand />
+          </div>
+          <h1 className="text-2xl font-bold text-center">Login</h1>
 
-        <Label className="text-md" htmlFor="email" i18nKey="Email" />
-        <Input
-          className="mb-4 rounded-md border bg-inherit px-4 py-2"
-          id="email"
-          name="email"
-          placeholder="you@example.com"
-          required
-        />
+          <div className="space-y-4">
+            <div>
+              <Label className="text-md" htmlFor="email" i18nKey="Email" />
+              <Input
+                className="mt-1 rounded-md border bg-inherit px-4 py-2 w-full"
+                id="email"
+                name="email"
+                placeholder="you@example.com"
+                required
+              />
+            </div>
 
-        <Label className="text-md" htmlFor="password" i18nKey="Password" />
-        <Input
-          className="mb-4 rounded-md border bg-inherit px-4 py-2"
-          id="password"
-          type="password"
-          name="password"
-          placeholder="••••••••"
-        />
+            <div>
+              <Label className="text-md" htmlFor="password" i18nKey="Password" />
+              <Input
+                className="mt-1 rounded-md border bg-inherit px-4 py-2 w-full"
+                id="password"
+                type="password"
+                name="password"
+                placeholder="••••••••"
+              />
+            </div>
+          </div>
 
-        <SignInButton className="mb-2 rounded-md bg-blue-700 px-4 py-2 text-white"></SignInButton>
+          <div className="space-y-2">
+            <SignInButton className="w-full rounded-md bg-blue-700 px-4 py-2 text-white"></SignInButton>
 
-        <SignUpButton
-          formAction={signUp}
-          className="border-foreground/20 mb-2 rounded-md border px-4 py-2"
-        ></SignUpButton>
-        {/* <div className="text-muted-foreground mt-1 flex justify-center text-sm">
-          <span className="mr-1">Forgot your password?</span>
-          <button
-            formAction={handleResetPassword}
-            className="text-primary ml-1 underline hover:opacity-80"
-          >
-            Reset
-          </button>
-        </div> */}
-        <ResetPassword handleResetPassword={handleResetPassword} />
-        {searchParams?.message && (
-          <p className="bg-foreground/10 text-foreground mt-4 p-4 text-center">
-            {searchParams.message}
-          </p>
-        )}
-      </form>
+            <SignUpButton
+              formAction={signUp}
+              className="w-full border-foreground/20 rounded-md border px-4 py-2"
+            ></SignUpButton>
+          </div>
+
+          <ResetPassword handleResetPassword={handleResetPassword} />
+          {searchParams?.message && (
+            <p className="bg-foreground/10 text-foreground mt-4 p-4 text-center rounded-md">
+              {searchParams.message}
+            </p>
+          )}
+        </form>
+      </div>
     </div>
   )
 }
