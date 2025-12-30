@@ -158,16 +158,18 @@ export default async function Login({
   }
 
   return (
-    <div className="flex w-full flex-1 flex-col justify-center gap-2 px-8 sm:max-w-md">
+    <div className="flex w-full flex-1 flex-col justify-center gap-4 px-8 py-8 sm:max-w-md">
       <form
-        className="animate-in text-foreground flex w-full flex-1 flex-col justify-center gap-2"
+        className="animate-in text-foreground flex w-full flex-1 flex-col justify-center gap-4"
         action={signIn}
       >
-        <Brand />
+        <div className="flex justify-center mb-4">
+          <Brand />
+        </div>
 
-        <Label className="text-md mt-4" htmlFor="email" i18nKey="Email" />
+        <Label className="text-md" htmlFor="email" i18nKey="Email" />
         <Input
-          className="mb-3 rounded-md border bg-inherit px-4 py-2"
+          className="mb-4 rounded-md border bg-inherit px-4 py-2"
           id="email"
           name="email"
           placeholder="you@example.com"
@@ -176,7 +178,7 @@ export default async function Login({
 
         <Label className="text-md" htmlFor="password" i18nKey="Password" />
         <Input
-          className="mb-6 rounded-md border bg-inherit px-4 py-2"
+          className="mb-4 rounded-md border bg-inherit px-4 py-2"
           id="password"
           type="password"
           name="password"
