@@ -67,14 +67,26 @@ export default function WorkspaceLayout({ children }: WorkspaceLayoutProps) {
 
       if (!session) {
         return router.push("/login")
-      } else {
+      }
+
+      try {
         await fetchWorkspaceData(workspaceId)
+      } catch (error) {
+        console.error("Failed to load workspace", error)
+        router.push("/setup")
       }
     })()
   }, [])
 
   useEffect(() => {
-    ;(async () => await fetchWorkspaceData(workspaceId))()
+    ;(async () => {
+      try {
+        await fetchWorkspaceData(workspaceId)
+      } catch (error) {
+        console.error("Failed to refresh workspace", error)
+        router.push("/setup")
+      }
+    })()
 
     setUserInput("")
     setChatMessages([])

@@ -1,9 +1,16 @@
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
 import { cookies } from "next/headers"
-import { SUPABASE_SERVER_URL, SUPABASE_SERVICE_ROLE_KEY } from "@/config"
+import {
+  SUPABASE_SERVER_URL,
+  SUPABASE_ANON_KEY,
+  SUPABASE_AUTH_STORAGE_KEY
+} from "@/config"
 
 export const createClient = (cookieStore: ReturnType<typeof cookies>) => {
-  return createServerClient(SUPABASE_SERVER_URL!, SUPABASE_SERVICE_ROLE_KEY!, {
+  return createServerClient(SUPABASE_SERVER_URL!, SUPABASE_ANON_KEY!, {
+    auth: {
+      storageKey: SUPABASE_AUTH_STORAGE_KEY
+    },
     cookies: {
       get(name: string) {
         return cookieStore.get(name)?.value

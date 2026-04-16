@@ -5,15 +5,12 @@ import { SubmitButton } from "@/components/ui/submit-button"
 import { SignInButton } from "@/components/ui/signin-button"
 import { SignUpButton } from "@/components/ui/signup-button"
 import { createClient } from "@/lib/supabase/server"
-import { Database } from "@/supabase/types"
-import { createServerClient } from "@supabase/ssr"
 import { get } from "@vercel/edge-config"
 import { Metadata } from "next"
 import { cookies, headers } from "next/headers"
 import { redirect } from "next/navigation"
 import ResetPassword from "@/components/ui/resetpassword"
 import { getEnvVarOrEdgeConfigValue } from "@/utils/getEnvVarOrEdgeConfigValue"
-import { SUPABASE_SERVER_URL, SUPABASE_ANON_KEY } from "@/config"
 
 export const metadata: Metadata = {
   title: "Login"
@@ -25,17 +22,7 @@ export default async function Login({
   searchParams: { message: string }
 }) {
   const cookieStore = cookies()
-  const supabase = createServerClient<Database>(
-    SUPABASE_SERVER_URL!,
-    SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        }
-      }
-    }
-  )
+  const supabase = createClient(cookieStore)
   const session = (await supabase.auth.getSession()).data.session
 
   if (session) {
@@ -44,10 +31,14 @@ export default async function Login({
       .select("*")
       .eq("user_id", session.user.id)
       .eq("is_home", true)
-      .single()
+      .maybeSingle()
+
+    if (error) {
+      throw new Error(error.message)
+    }
 
     if (!homeWorkspace) {
-      throw new Error(error.message)
+      return redirect("/setup")
     }
 
     return redirect(`/${homeWorkspace.id}/c`)
@@ -75,12 +66,16 @@ export default async function Login({
       .select("*")
       .eq("user_id", data.user.id)
       .eq("is_home", true)
-      .single()
+      .maybeSingle()
+
+    if (homeWorkspaceError) {
+      throw new Error(
+        homeWorkspaceError.message || "An unexpected error occurred"
+      )
+    }
 
     if (!homeWorkspace) {
-      throw new Error(
-        homeWorkspaceError?.message || "An unexpected error occurred"
-      )
+      return redirect("/setup")
     }
 
     return redirect(`/${homeWorkspace.id}/c`)
@@ -158,22 +153,22 @@ export default async function Login({
   }
 
   return (
-    <div className="flex w-full flex-1 flex-col justify-center px-8 py-8">
-      <div className="w-full max-w-md mx-auto bg-card rounded-lg shadow-md p-6">
+    <div className="flex w-full flex-1 flex-col justify-center p-8">
+      <div className="bg-card mx-auto w-full max-w-md rounded-lg p-6 shadow-md">
         <form
           className="animate-in text-foreground flex flex-col gap-6"
           action={signIn}
         >
-          <div className="flex justify-center mb-4">
+          <div className="mb-4 flex justify-center">
             <Brand />
           </div>
-          <h1 className="text-2xl font-bold text-center">Login</h1>
+          <h1 className="text-center text-2xl font-bold">Login</h1>
 
           <div className="space-y-4">
             <div>
               <Label className="text-md" htmlFor="email" i18nKey="Email" />
               <Input
-                className="mt-1 rounded-md border bg-inherit px-4 py-2 w-full"
+                className="mt-1 w-full rounded-md border bg-inherit px-4 py-2"
                 id="email"
                 name="email"
                 placeholder="you@example.com"
@@ -184,7 +179,7 @@ export default async function Login({
             <div>
               <Label className="text-md" htmlFor="password" i18nKey="Password" />
               <Input
-                className="mt-1 rounded-md border bg-inherit px-4 py-2 w-full"
+                className="mt-1 w-full rounded-md border bg-inherit px-4 py-2"
                 id="password"
                 type="password"
                 name="password"
@@ -198,13 +193,13 @@ export default async function Login({
 
             <SignUpButton
               formAction={signUp}
-              className="w-full border-foreground/20 rounded-md border px-4 py-2"
+              className="border-foreground/20 w-full rounded-md border px-4 py-2"
             ></SignUpButton>
           </div>
 
           <ResetPassword handleResetPassword={handleResetPassword} />
           {searchParams?.message && (
-            <p className="bg-foreground/10 text-foreground mt-4 p-4 text-center rounded-md">
+            <p className="bg-foreground/10 text-foreground mt-4 rounded-md p-4 text-center">
               {searchParams.message}
             </p>
           )}

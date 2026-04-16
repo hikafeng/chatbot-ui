@@ -282,6 +282,8 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
           {/* Hidden input to select files from device */}
           <Input
             ref={fileInputRef}
+            id="chat-file-input"
+            name="chatFileInput"
             className="hidden"
             type="file"
             onChange={e => {
@@ -294,6 +296,8 @@ export const ChatInput: FC<ChatInputProps> = ({}) => {
 
         <TextareaAutosize
           textareaRef={chatInputRef}
+          id="chat-message-input"
+          name="chatMessageInput"
           className="ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring text-md flex w-full resize-none rounded-md border-none bg-transparent py-2 pl-14 pr-28 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
           placeholder={t("Ask anything. Type @  /  #  ! ~")}
           onValueChange={handleInputChange}

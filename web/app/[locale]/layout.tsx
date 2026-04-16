@@ -3,8 +3,7 @@ import { GlobalState } from "@/components/utility/global-state"
 import { Providers } from "@/components/utility/providers"
 import TranslationsProvider from "@/components/utility/translations-provider"
 import initTranslations from "@/lib/i18n"
-import { Database } from "@/supabase/types"
-import { createServerClient } from "@supabase/ssr"
+import { createClient } from "@/lib/supabase/server"
 import { Metadata, Viewport } from "next"
 import localFont from "next/font/local"
 import { cookies } from "next/headers"
@@ -13,7 +12,6 @@ import "./globals.css"
 import "katex/dist/katex.min.css"
 import { Analytics } from "@vercel/analytics/react"
 import { getEnvVarOrEdgeConfigValue } from "@/utils/getEnvVarOrEdgeConfigValue"
-import { SUPABASE_SERVER_URL, SUPABASE_ANON_KEY } from "@/config"
 const inter = localFont({
   src: "./fonts/Inter-Regular.woff2",
   display: "swap"
@@ -45,6 +43,9 @@ export const metadata: Metadata = {
   },
   description: APP_DESCRIPTION,
   manifest: "/manifest.json",
+  other: {
+    "mobile-web-app-capable": "yes"
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black",
@@ -84,17 +85,7 @@ export default async function RootLayout({
   params: { locale }
 }: RootLayoutProps) {
   const cookieStore = cookies()
-  const supabase = createServerClient<Database>(
-    SUPABASE_SERVER_URL!,
-    SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        get(name: string) {
-          return cookieStore.get(name)?.value
-        }
-      }
-    }
-  )
+  const supabase = createClient(cookieStore)
   const session = (await supabase.auth.getSession()).data.session
 
   const { t, resources } = await initTranslations(locale, i18nNamespaces)

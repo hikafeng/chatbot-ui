@@ -2,19 +2,19 @@
 
 This guide walks you through setting up Chatbot-UI locally using Docker Compose and a self-hosted Supabase instance. It covers securing your environment, configuring environment variables, running services, and applying database migrations, including optional adjustments to the migration SQL file.
 
-
-
 ---
 
 ## Table of Contents
 
-1. [Prerequisites](#prerequisites)
-2. [Securing Your Services](#securing-your-services)
-3. [Environment Variable Configuration](#environment-variable-configuration)
-4. [Optional: Update Migration SQL File](#optional-update-migration-sql-file)
-5. [Deployment Steps](#deployment-steps)
-6. [Accessing Chatbot-UI](#accessing-chatbot-ui)
-7. [Notes](#notes)
+- [How to Deploy Chatbot-UI Locally with Docker Compose](#how-to-deploy-chatbot-ui-locally-with-docker-compose)
+  - [Table of Contents](#table-of-contents)
+  - [Prerequisites](#prerequisites)
+  - [Securing Your Services](#securing-your-services)
+  - [Environment Variable Configuration](#environment-variable-configuration)
+  - [Optional: Update Migration SQL File](#optional-update-migration-sql-file)
+  - [Deployment Steps](#deployment-steps)
+  - [Accessing Chatbot-UI](#accessing-chatbot-ui)
+  - [Notes](#notes)
 
 ---
 
@@ -78,7 +78,7 @@ For more information, see [Securing Your Services](https://supabase.com/docs/gui
 
    Edit your Chatbot-UI environment variables file ( `../.env.docker`) as follows：
 
-   ```
+   ```env
    NEXT_PUBLIC_SUPABASE_PUBLIC_URL=http://<your-server-ip>:8000
    NEXT_PUBLIC_SUPABASE_SERVER_URL=http://kong:8000
    ```
@@ -87,7 +87,7 @@ For more information, see [Securing Your Services](https://supabase.com/docs/gui
 
    **Example:**
 
-   ```
+   ```.env
    NEXT_PUBLIC_SUPABASE_PUBLIC_URL=http://192.168.1.100:8000
    NEXT_PUBLIC_SUPABASE_SERVER_URL=http://kong:8000
    ```
@@ -140,13 +140,13 @@ Make sure these values are consistent with your environment variables and deploy
 
 Open your browser and navigate to:
 
-```
+```shell
 http://<your-server-ip>:3000
 ```
 
 For example:
 
-```
+```shell
 http://192.168.1.100:3000
 ```
 

@@ -50,5 +50,3 @@ workbox-*.js.map
 ./docker/volumes/
 # local env files
 ./docker/.env
-
-.env.docker

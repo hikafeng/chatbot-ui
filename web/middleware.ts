@@ -20,10 +20,14 @@ export async function middleware(request: NextRequest) {
         .select("*")
         .eq("user_id", session.data.session?.user.id)
         .eq("is_home", true)
-        .single()
+        .maybeSingle()
+
+      if (error) {
+        throw new Error(error.message)
+      }
 
       if (!homeWorkspace) {
-        throw new Error(error?.message)
+        return NextResponse.redirect(new URL("/setup", request.url))
       }
 
       return NextResponse.redirect(

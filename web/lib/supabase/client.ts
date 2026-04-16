@@ -1,4 +1,14 @@
 import { createBrowserClient } from "@supabase/ssr"
-import { SUPABASE_PUBLIC_URL, SUPABASE_ANON_KEY } from "@/config"
+import {
+  SUPABASE_PUBLIC_URL,
+  SUPABASE_ANON_KEY,
+  SUPABASE_AUTH_STORAGE_KEY
+} from "@/config"
+
 export const createClient = () =>
-  createBrowserClient(SUPABASE_PUBLIC_URL!, SUPABASE_ANON_KEY!)
+  createBrowserClient(SUPABASE_PUBLIC_URL!, SUPABASE_ANON_KEY!, {
+    cookies: {},
+    auth: {
+      storageKey: SUPABASE_AUTH_STORAGE_KEY
+    }
+  })
