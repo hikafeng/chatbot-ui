@@ -10,7 +10,7 @@ import {
 import { MODEL_NAME_MAX } from "@/db/limits"
 import { Tables, TablesUpdate } from "@/supabase/types"
 import { IconBoxModel } from "@tabler/icons-react"
-import { FC, useState } from "react"
+import { FC, useEffect, useState } from "react"
 import { SidebarItem } from "../all/sidebar-display-item"
 
 interface ModelItemProps {
@@ -26,8 +26,14 @@ export const ModelItem: FC<ModelItemProps> = ({ model }) => {
   const [modelId, setModelId] = useState(model.model_id)
   const [name, setName] = useState(model.name)
   const [contextLength, setContextLength] = useState(model.context_length)
-  const [imageInput, setImageInput] = useState(false)
-  const [toolCall, setToolCall] = useState(false)
+  const [imageInput, setImageInput] = useState(Boolean(model.image_input))
+  const [toolCall, setToolCall] = useState(Boolean(model.tool_call))
+
+  useEffect(() => {
+    setImageInput(Boolean(model.image_input))
+    setToolCall(Boolean(model.tool_call))
+  }, [model.image_input, model.tool_call])
+
   return (
     <SidebarItem
       item={model}
@@ -42,6 +48,7 @@ export const ModelItem: FC<ModelItemProps> = ({ model }) => {
           context_length: contextLength,
           model_id: modelId,
           image_input: imageInput,
+          tool_call: toolCall,
           name
         } as TablesUpdate<"models">
       }
@@ -108,7 +115,10 @@ export const ModelItem: FC<ModelItemProps> = ({ model }) => {
 
           <div className="space-y-1">
             <Label>Vision Support</Label>
-            <Select onValueChange={value => setImageInput(value === "true")}>
+            <Select
+              value={String(imageInput)}
+              onValueChange={value => setImageInput(value === "true")}
+            >
               <SelectTrigger>
                 <SelectValue placeholder={imageInput ? "True" : "False"} />
               </SelectTrigger>
@@ -120,7 +130,10 @@ export const ModelItem: FC<ModelItemProps> = ({ model }) => {
           </div>
           <div className="space-y-1">
             <Label>Tool Call Support</Label>
-            <Select onValueChange={value => setToolCall(value === "true")}>
+            <Select
+              value={String(toolCall)}
+              onValueChange={value => setToolCall(value === "true")}
+            >
               <SelectTrigger>
                 <SelectValue placeholder={toolCall ? "True" : "False"} />
               </SelectTrigger>

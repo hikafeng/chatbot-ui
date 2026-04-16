@@ -1,7 +1,7 @@
 // config/index.ts
 
 const DEFAULT_SUPABASE_SERVER_URL = "http://kong:8000"
-const DEFAULT_SUPABASE_PUBLIC_PATH = "/supabase"
+const DEFAULT_SUPABASE_PUBLIC_PATH = "/api/supabase"
 const DEFAULT_PUBLIC_HOST = "http://localhost:3000"
 
 let _supabasePublicUrl: string | null = null
